@@ -1,0 +1,17 @@
+{
+  "name": "Bodega CAJU",
+  "short_name": "Bodega CAJU",
+  "description": "Educação Financeira para Pequenos Negócios no Cariri Cearense (URCA)",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8E1",
+  "theme_color": "#BF360C",
+  "icons": [
+    {
+      "src": "/caju-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
