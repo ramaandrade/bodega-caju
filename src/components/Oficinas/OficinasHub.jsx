@@ -50,17 +50,62 @@ export function OficinasHub({ stageId, businessState, onUpdateCash, onRewardCaju
 // ----------------------------------------------------
 // 1. OFICINA A GAVETA MISTURADA (Estação 1)
 // ----------------------------------------------------
-function OficinaGaveta({ businessState, onUpdateCash, onRewardCajus }) {
-  const initialItems = [
+const GAVETA_ITEMS_BY_BIZ = {
+  marmitaria: [
     { id: 1, desc: 'Compra de 20 kg de frango na feira', val: 240, correct: 'negocio' },
     { id: 2, desc: 'Conta de luz da casa da família', val: 190, correct: 'casa' },
-    { id: 3, desc: 'Venda de 35 marmitas no almoço', val: 525, correct: 'negocio' },
+    { id: 3, desc: 'Venda de 35 marmitas no almoço (Pix)', val: 525, correct: 'negocio' },
     { id: 4, desc: 'Mensalidade escolar do filho', val: 320, correct: 'casa' },
     { id: 5, desc: 'Botijão de gás da cozinha da marmitaria', val: 110, correct: 'negocio' },
     { id: 6, desc: 'Remédio da farmácia para a avó', val: 85, correct: 'casa' },
     { id: 7, desc: 'Compra de 100 embalagens descartáveis', val: 95, correct: 'negocio' },
-    { id: 8, desc: 'Feira da semana para casa (frutas/sabão)', val: 210, correct: 'casa' },
-  ];
+    { id: 8, desc: 'Feira da semana para casa (frutas/sabão)', val: 210, correct: 'casa' }
+  ],
+  barraca_romaria: [
+    { id: 1, desc: 'Compra de 150 terços e fitas de Juazeiro', val: 300, correct: 'negocio' },
+    { id: 2, desc: 'Conta de água da casa da família', val: 95, correct: 'casa' },
+    { id: 3, desc: 'Venda de artigos na Colina do Horto', val: 660, correct: 'negocio' },
+    { id: 4, desc: 'Calçado novo para o filho ir à escola', val: 140, correct: 'casa' },
+    { id: 5, desc: 'Taxa municipal do ponto da barraca', val: 60, correct: 'negocio' },
+    { id: 6, desc: 'Botijão de gás da cozinha de casa', val: 110, correct: 'casa' },
+    { id: 7, desc: 'Sacolas plásticas e fitas decoradas', val: 80, correct: 'negocio' },
+    { id: 8, desc: 'Remédio de pressão do Seu Expedito', val: 75, correct: 'casa' }
+  ],
+  atelie_couro: [
+    { id: 1, desc: 'Compra de meio lote de couro curtido', val: 450, correct: 'negocio' },
+    { id: 2, desc: 'Conta de energia da residência', val: 160, correct: 'casa' },
+    { id: 3, desc: 'Venda de 3 bolsas a turistas do Geopark', val: 510, correct: 'negocio' },
+    { id: 4, desc: 'Internet Wi-Fi da casa da família', val: 110, correct: 'casa' },
+    { id: 5, desc: 'Fivelas metálicas e linhas enceradas', val: 120, correct: 'negocio' },
+    { id: 6, desc: 'Supermercado do mês para a família', val: 280, correct: 'casa' },
+    { id: 7, desc: 'Afiação e manutenção de navalhas/máquina', val: 70, correct: 'negocio' },
+    { id: 8, desc: 'Material escolar dos sobrinhos', val: 65, correct: 'casa' }
+  ],
+  bodega_bairro: [
+    { id: 1, desc: 'Fardo de arroz e feijão com distribuidor', val: 380, correct: 'negocio' },
+    { id: 2, desc: 'Mensalidade escolar das crianças', val: 290, correct: 'casa' },
+    { id: 3, desc: 'Entradas do dia no balcão (dinheiro e Pix)', val: 590, correct: 'negocio' },
+    { id: 4, desc: 'Conta de luz da residência familiar', val: 180, correct: 'casa' },
+    { id: 5, desc: 'Caixa de óleo e sabão para prateleira', val: 190, correct: 'negocio' },
+    { id: 6, desc: 'Drogaria e remédios para a família', val: 95, correct: 'casa' },
+    { id: 7, desc: 'Bobinas de papel do cupom e sacolas', val: 45, correct: 'negocio' },
+    { id: 8, desc: 'Botijão de gás da casa do Seu Zé', val: 110, correct: 'casa' }
+  ],
+  banca_feira: [
+    { id: 1, desc: 'Feijão-verde e macaxeira do produtor rural', val: 210, correct: 'negocio' },
+    { id: 2, desc: 'Conta de água da casa de Dona Maria', val: 70, correct: 'casa' },
+    { id: 3, desc: 'Vendas da manhã na feira do Crato', val: 480, correct: 'negocio' },
+    { id: 4, desc: 'Fardamento e calçado do filho', val: 120, correct: 'casa' },
+    { id: 5, desc: 'Frete da caminhonete que trouxe as caixas', val: 80, correct: 'negocio' },
+    { id: 6, desc: 'Carnes e compras de casa no açougue', val: 150, correct: 'casa' },
+    { id: 7, desc: 'Sacos de feira e barbante de amarrar', val: 35, correct: 'negocio' },
+    { id: 8, desc: 'Gás de cozinha doméstico', val: 110, correct: 'casa' }
+  ]
+};
+
+function OficinaGaveta({ businessState, onUpdateCash, onRewardCajus }) {
+  const bizId = businessState?.id || 'marmitaria';
+  const initialItems = GAVETA_ITEMS_BY_BIZ[bizId] || GAVETA_ITEMS_BY_BIZ.marmitaria;
 
   const [items, setItems] = useState(initialItems);
   const [classified, setClassified] = useState({});
@@ -507,12 +552,16 @@ function OficinaCaixa({ businessState, onUpdateCash, onRewardCajus }) {
 }
 
 // ----------------------------------------------------
-// 5. OFICINA RAIO-X DA MARMITA (Estação 5 - Custos)
+// 5. OFICINA RAIO-X DOS CUSTOS (Estação 5 - Custos)
 // ----------------------------------------------------
 function OficinaCustos({ businessState, onRewardCajus }) {
-  const [volume, setVolume] = useState(500);
-  const fixedTotal = 1500;
-  const cva = 8.40;
+  const bizId = businessState?.id || 'marmitaria';
+  const cva = businessState?.variableCostUnit || 8.40;
+  const fixedTotal = (businessState?.dailyFixedCost || 35) * 30;
+  const defaultVolume = bizId === 'atelie_couro' ? 50 : bizId === 'barraca_romaria' ? 300 : bizId === 'banca_feira' ? 1200 : 500;
+  const unitLabel = bizId === 'atelie_couro' ? 'peças de couro' : bizId === 'barraca_romaria' ? 'artigos religiosos' : bizId === 'banca_feira' ? 'porções de feira' : bizId === 'bodega_bairro' ? 'cestas de itens' : 'marmitas';
+
+  const [volume, setVolume] = useState(defaultVolume);
 
   const dfu = fixedTotal / volume;
   const totalUnit = cva + dfu;
@@ -520,30 +569,30 @@ function OficinaCustos({ businessState, onRewardCajus }) {
   return (
     <div className="space-y-4 text-xs">
       <div className="bg-amber-100 border border-amber-300 p-3 rounded-2xl">
-        <h4 className="font-bold text-amber-900 text-sm">Oficina: Raio-X dos Custos e Escala</h4>
+        <h4 className="font-bold text-amber-900 text-sm">Oficina: Raio-X dos Custos e Escala ({businessState?.name || 'Seu Negócio'})</h4>
         <p className="text-stone-700 mt-1">
-          Veja como o aumento na quantidade vendida dilui as despesas fixas (DFu) e reduz o custo total de cada quentinha!
+          Veja como o aumento no volume mensal dilui os custos fixos (DFu) de <b>{businessState?.name}</b> e barateia cada {unitLabel}!
         </p>
       </div>
 
       <div className="bg-white border border-stone-200 p-3 rounded-2xl space-y-2">
         <div className="flex justify-between items-center">
           <span className="font-bold text-stone-800">Volume Produzido no Mês:</span>
-          <span className="font-mono text-base font-extrabold text-amber-600">{volume} marmitas</span>
+          <span className="font-mono text-base font-extrabold text-amber-600">{volume} {unitLabel}</span>
         </div>
         <input 
           type="range"
-          min="100"
-          max="2000"
-          step="50"
+          min={bizId === 'atelie_couro' ? 10 : 100}
+          max={bizId === 'atelie_couro' ? 200 : 2500}
+          step={bizId === 'atelie_couro' ? 5 : 50}
           value={volume}
           onChange={(e) => setVolume(Number(e.target.value))}
           className="w-full accent-amber-600"
         />
         <div className="flex justify-between text-[10px] text-stone-500">
-          <span>100 unidades</span>
-          <span>1.000 unidades</span>
-          <span>2.000 unidades</span>
+          <span>{bizId === 'atelie_couro' ? '10 peças' : '100 unidades'}</span>
+          <span>{bizId === 'atelie_couro' ? '100 peças' : '1.000 unidades'}</span>
+          <span>{bizId === 'atelie_couro' ? '200 peças' : '2.500 unidades'}</span>
         </div>
       </div>
 
@@ -551,7 +600,7 @@ function OficinaCustos({ businessState, onRewardCajus }) {
         <div className="bg-stone-100 p-2.5 rounded-xl border border-stone-200">
           <span className="text-[10px] text-stone-500">Custo Variável (CVu):</span>
           <div className="font-mono font-bold text-stone-800 mt-0.5">R$ {cva.toFixed(2)}</div>
-          <span className="text-[9px] text-stone-400">Fixo por unidade</span>
+          <span className="text-[9px] text-stone-400">Por {unitLabel}</span>
         </div>
         <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
           <span className="text-[10px] text-amber-800 font-semibold">Custo Fixo (DFu):</span>
@@ -572,7 +621,8 @@ function OficinaCustos({ businessState, onRewardCajus }) {
 // 6. OFICINA BALCÃO DE PREÇO & MARKUP (Estação 6 - Precificação)
 // ----------------------------------------------------
 function OficinaMarkup({ businessState, onUpdateCash, onRewardCajus }) {
-  const [cost, setCost] = useState(9.00);
+  const initialCost = businessState?.variableCostUnit || 9.00;
+  const [cost, setCost] = useState(initialCost);
   const [cardTax, setCardTax] = useState(4);
   const [simplesTax, setSimplesTax] = useState(6);
   const [targetMargin, setTargetMargin] = useState(25);
@@ -585,9 +635,9 @@ function OficinaMarkup({ businessState, onUpdateCash, onRewardCajus }) {
   return (
     <div className="space-y-4 text-xs">
       <div className="bg-amber-100 border border-amber-300 p-3 rounded-2xl">
-        <h4 className="font-bold text-amber-900 text-sm">Oficina: Calculadora de Markup Divisor</h4>
+        <h4 className="font-bold text-amber-900 text-sm">Oficina: Calculadora de Markup Divisor ({businessState?.name || 'Seu Negócio'})</h4>
         <p className="text-stone-700 mt-1">
-          Preço = Custo ÷ [1 − (Taxas + Margem)]. Garanta que sua margem seja calculada sobre o preço final!
+          Preço = Custo ÷ [1 − (Taxas + Margem)]. Garanta que sua margem cubra as taxas de cartão e impostos no balcão!
         </p>
       </div>
 
@@ -636,7 +686,7 @@ function OficinaMarkup({ businessState, onUpdateCash, onRewardCajus }) {
           R$ {calculatedPrice.toFixed(2)}
         </div>
         <div className="text-[11px] text-emerald-300 font-medium">
-          Margem de Contribuição: R$ {mcUnit.toFixed(2)} por unidade vendida
+          Margem de Contribuição: R$ {mcUnit.toFixed(2)} por unidade vendida (Preço base do negócio: R$ {businessState?.averagePrice?.toFixed(2) || '15,00'})
         </div>
       </div>
     </div>
@@ -647,13 +697,18 @@ function OficinaMarkup({ businessState, onUpdateCash, onRewardCajus }) {
 // 7. OFICINA RÉGUA DOS PRAZOS (Estação 7 - Capital de Giro)
 // ----------------------------------------------------
 function OficinaGiro({ businessState, onRewardCajus }) {
-  const [pme, setPme] = useState(15);
-  const [pmr, setPmr] = useState(20);
-  const [pmp, setPmp] = useState(25);
+  const bizId = businessState?.id || 'marmitaria';
+  const initialPme = bizId === 'barraca_romaria' ? 35 : bizId === 'atelie_couro' ? 25 : bizId === 'bodega_bairro' ? 20 : 5;
+  const initialPmr = bizId === 'bodega_bairro' ? 25 : bizId === 'atelie_couro' ? 12 : bizId === 'barraca_romaria' ? 2 : 5;
+  const initialPmp = bizId === 'atelie_couro' ? 30 : bizId === 'barraca_romaria' ? 10 : 20;
+
+  const [pme, setPme] = useState(initialPme);
+  const [pmr, setPmr] = useState(initialPmr);
+  const [pmp, setPmp] = useState(initialPmp);
 
   const co = pme + pmr;
   const cf = co - pmp;
-  const dailyExpenses = 350;
+  const dailyExpenses = (businessState?.dailyFixedCost || 35) * 6;
   const ncg = cf > 0 ? cf * dailyExpenses : 0;
 
   return (
