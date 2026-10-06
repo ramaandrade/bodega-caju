@@ -181,16 +181,16 @@ export function Navbar({
 
             <div className="py-3 space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-stone-800/60">
-                <span className="text-stone-400">Empreendedor(a):</span>
-                <span className="font-semibold text-white">{profile.name}</span>
+                <span className="text-stone-400">Negócio Atual:</span>
+                <span className="font-bold text-amber-300">{businessState.name}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-stone-800/60">
-                <span className="text-stone-400">Perfil:</span>
-                <span className="font-semibold text-amber-300 uppercase">{profile.role}</span>
+                <span className="text-stone-400">Responsável:</span>
+                <span className="font-semibold text-white">{businessState.owner}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-stone-800/60">
-                <span className="text-stone-400">Turma URCA:</span>
-                <span className="font-mono text-white">{profile.classCode}</span>
+                <span className="text-stone-400">Ponto Comercial:</span>
+                <span className="font-mono text-stone-200">{businessState.city || 'Cariri Cearense'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-stone-800/60">
                 <span className="text-stone-400">Graduação Atual:</span>

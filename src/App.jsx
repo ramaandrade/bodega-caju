@@ -41,11 +41,7 @@ export default function App() {
   const [showGlossary, setShowGlossary] = useState(false);
 
   // Onboarding temp state
-  const [onboardingName, setOnboardingName] = useState('Estudante da URCA');
-  const [onboardingRole, setOnboardingRole] = useState('aluno');
-  const [onboardingClass, setOnboardingClass] = useState('URCA26');
   const [onboardingBiz, setOnboardingBiz] = useState(PLAYABLE_BUSINESSES[0]);
-  const [lgpdAccepted, setLgpdAccepted] = useState(true);
 
   // Persist game state on changes
   useEffect(() => {
@@ -207,11 +203,11 @@ export default function App() {
   };
 
   // Finish Onboarding
-  const handleFinishOnboarding = () => {
-    const initialState = createInitialState(onboardingBiz, {
-      name: onboardingName,
-      role: onboardingRole,
-      classCode: onboardingClass
+  const handleFinishOnboarding = (biz = onboardingBiz) => {
+    const initialState = createInitialState(biz, {
+      name: 'Estudante',
+      role: 'aluno',
+      classCode: 'URCA26'
     });
     setGameState(initialState);
     setHasStarted(true);
@@ -222,7 +218,7 @@ export default function App() {
   const isHighContrast = gameState.settings?.highContrast;
   const isLargeFont = gameState.settings?.fontSize === 'large';
 
-  // ---------------- ONBOARDING SCREEN ----------------
+  // ---------------- ONBOARDING SCREEN (ESCOLHA DIRETA DO NEGÓCIO) ----------------
   if (!hasStarted) {
     return (
       <div className="min-h-screen bg-stone-950 text-stone-100 flex items-center justify-center p-3">
@@ -238,96 +234,39 @@ export default function App() {
               Educação Financeira para Pequenos Negócios · URCA (Crato-CE)
             </p>
             <p className="text-[11px] text-stone-400 max-w-xs mx-auto pt-1">
-              Bem-vindo a Vila Araripe! Escolha seu perfil e seu pequeno negócio para iniciar a Trilha da Chapada com Mestre Caju.
+              Escolha seu negócio para assumir em Vila Araripe:
             </p>
           </div>
 
-          <div className="space-y-3 pt-2 text-xs">
-            <div>
-              <label className="font-bold text-stone-300 block mb-1">Seu Nome ou Apelido:</label>
-              <input
-                type="text"
-                value={onboardingName}
-                onChange={(e) => setOnboardingName(e.target.value)}
-                className="w-full p-2.5 rounded-xl bg-stone-800 border border-stone-700 text-white font-semibold text-xs focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="font-bold text-stone-300 block mb-1">Perfil:</label>
-                <select
-                  value={onboardingRole}
-                  onChange={(e) => setOnboardingRole(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-stone-800 border border-stone-700 text-white font-semibold text-xs focus:outline-none focus:border-amber-500"
-                >
-                  <option value="aluno">Aluno(a) de Economia</option>
-                  <option value="empreendedor">Empreendedor(a)</option>
-                  <option value="professor">Professor / Extensionista</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-bold text-stone-300 block mb-1">Código da Turma:</label>
-                <input
-                  type="text"
-                  value={onboardingClass}
-                  onChange={(e) => setOnboardingClass(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-stone-800 border border-stone-700 text-amber-300 font-mono font-bold text-xs uppercase"
-                />
-              </div>
-            </div>
-
-            {/* Choose 1 of 5 businesses */}
-            <div>
-              <label className="font-bold text-amber-300 block mb-1.5">
-                Escolha seu Negócio Inicial em Vila Araripe:
-              </label>
-              <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1 no-scrollbar">
-                {PLAYABLE_BUSINESSES.map(b => (
-                  <div
-                    key={b.id}
-                    onClick={() => setOnboardingBiz(b)}
-                    className={`p-2.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
-                      onboardingBiz.id === b.id
-                        ? 'bg-amber-500/20 border-amber-500 ring-2 ring-amber-400'
-                        : 'bg-stone-800/80 border-stone-700 hover:border-stone-600'
-                    }`}
-                  >
-                    <span className="text-2xl">{b.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-stone-100 truncate text-xs">{b.name}</div>
-                      <div className="text-[10px] text-amber-400 truncate">{b.tagline}</div>
-                      <div className="text-[9px] text-stone-400 mt-0.5 truncate">
-                        Caixa inicial: R$ {b.initialCash.toFixed(2)} · {b.city}
-                      </div>
-                    </div>
+          {/* Seleção direta do negócio sem burocracia */}
+          <div className="space-y-2 max-h-72 overflow-y-auto pr-1 no-scrollbar">
+            {PLAYABLE_BUSINESSES.map(b => (
+              <div
+                key={b.id}
+                onClick={() => setOnboardingBiz(b)}
+                className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
+                  onboardingBiz.id === b.id
+                    ? 'bg-amber-500/20 border-amber-500 ring-2 ring-amber-400'
+                    : 'bg-stone-800/80 border-stone-700 hover:border-stone-600'
+                }`}
+              >
+                <span className="text-2xl">{b.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-stone-100 truncate text-xs">{b.name}</div>
+                  <div className="text-[10px] text-amber-400 truncate">{b.tagline}</div>
+                  <div className="text-[9px] text-stone-400 mt-0.5 truncate">
+                    Caixa inicial: R$ {b.initialCash.toFixed(2)} · {b.city}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-
-            {/* LGPD Consent */}
-            <div className="flex items-start gap-2 pt-1 text-[10px] text-stone-400">
-              <input
-                type="checkbox"
-                id="lgpd"
-                checked={lgpdAccepted}
-                onChange={(e) => setLgpdAccepted(e.target.checked)}
-                className="mt-0.5 rounded text-amber-600 focus:ring-0"
-              />
-              <label htmlFor="lgpd" className="leading-tight">
-                Autorizo o uso pedagógico e acadêmico dos dados anonimizados das respostas para pesquisas e extensão da URCA (LGPD).
-              </label>
-            </div>
+            ))}
           </div>
 
           <button
-            disabled={!lgpdAccepted || !onboardingName.trim()}
-            onClick={handleFinishOnboarding}
-            className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+            onClick={() => handleFinishOnboarding(onboardingBiz)}
+            className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all"
           >
-            <span>Iniciar Jornada com Mestre Caju</span>
+            <span>Iniciar com {onboardingBiz.name}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
