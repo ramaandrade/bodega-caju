@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="cajuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5722"/>
+      <stop offset="50%" stop-color="#FF9800"/>
+      <stop offset="100%" stop-color="#FFC107"/>
+    </linearGradient>
+    <linearGradient id="castanhaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5D4037"/>
+      <stop offset="100%" stop-color="#3E2723"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#FFF3E0" stroke="#E65100" stroke-width="3"/>
+  <!-- Castanha (Chestnut) at the top -->
+  <path d="M 44,22 C 38,12 55,8 60,16 C 65,24 54,28 47,26 C 44,25 43,23 44,22 Z" fill="url(#castanhaGrad)" stroke="#27130A" stroke-width="1.5"/>
+  <!-- Caju body -->
+  <path d="M 44,25 C 32,28 24,45 28,65 C 32,82 48,88 56,88 C 66,88 78,80 76,60 C 74,42 62,26 48,25 Z" fill="url(#cajuGrad)" stroke="#D84315" stroke-width="2"/>
+  <!-- Shine highlight -->
+  <path d="M 36,40 C 34,50 38,68 44,72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <!-- Coins / Money symbol inside -->
+  <circle cx="52" cy="56" r="12" fill="#2E7D32" opacity="0.9"/>
+  <text x="52" y="61" font-family="sans-serif" font-weight="900" font-size="12" fill="#FFFFFF" text-anchor="middle">R$</text>
+</svg>
