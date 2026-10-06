@@ -1,37 +1,41 @@
 import React, { useState } from 'react';
 import { 
   Lock, 
+  Unlock,
   CheckCircle, 
   Star, 
   Sparkles, 
   Flame, 
   Award, 
   Calendar, 
-  ChevronRight,
-  MapPin,
-  TrendingUp,
-  Info
+  ChevronRight, 
+  MapPin, 
+  TrendingUp, 
+  Info,
+  KeyRound,
+  ShieldCheck
 } from 'lucide-react';
 import { STAGES_DATA } from '../data/stages';
 import { SEASONAL_EVENTS } from '../data/seasonalEvents';
+import { isStageUnlocked } from '../utils/storage';
 
-export function TrilhaMap({ gameState, onSelectStage }) {
-  const { gamification, businessState } = gameState;
+export function TrilhaMap({ gameState, onSelectStage, onOpenAdminPanel }) {
+  const { gamification, businessState, admin } = gameState;
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
   const activeSeason = SEASONAL_EVENTS[selectedSeasonIdx];
-
-  const highestUnlocked = gamification.highestUnlockedStage || 1;
 
   // calculate badge counts
   let bronzeCount = 0;
   let silverCount = 0;
   let goldCount = 0;
 
-  Object.values(gamification.badges || {}).forEach(b => {
+  Object.values(gamification?.badges || {}).forEach(b => {
     if (b.bronze) bronzeCount++;
     if (b.prata) silverCount++;
     if (b.ouro) goldCount++;
   });
+
+  const totalUnlocked = STAGES_DATA.filter(s => isStageUnlocked(gameState, s.id)).length;
 
   return (
     <div className="space-y-4 pb-20">
@@ -72,7 +76,7 @@ export function TrilhaMap({ gameState, onSelectStage }) {
           </div>
 
           <div className="text-[11px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-full border border-amber-500/30">
-            {Object.keys(gamification.badges || {}).length} / 12 Estações
+            {totalUnlocked} / 12 Liberadas
           </div>
         </div>
       </div>
@@ -103,29 +107,47 @@ export function TrilhaMap({ gameState, onSelectStage }) {
 
       {/* 12 Stations Road / Trail */}
       <div className="space-y-3">
+        {/* Header com Botão do Administrador */}
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">
-            Estações da Trilha
-          </h2>
-          <span className="text-[11px] text-amber-700 font-semibold">
-            Toque para entrar no ciclo de jogo
-          </span>
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">
+              Estações da Trilha
+            </h2>
+            <span className="text-[10px] text-stone-500 font-medium">
+              {admin?.allUnlocked ? 'Todas liberadas pelo Admin' : 'Acesso independente'}
+            </span>
+          </div>
+
+          {/* Botão de Liberação pelo Administrador */}
+          <button
+            onClick={onOpenAdminPanel}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 text-[11px] font-bold shadow-sm active:scale-95 transition-all border border-amber-600/40"
+            title="Disponibilizar estações com a senha do administrador"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+            <span>Admin (Liberar)</span>
+          </button>
         </div>
 
         {STAGES_DATA.map((stage) => {
-          const isUnlocked = stage.id <= highestUnlocked;
-          const badge = gamification.badges?.[stage.id] || {};
+          const isUnlocked = isStageUnlocked(gameState, stage.id);
+          const badge = gamification?.badges?.[stage.id] || {};
           const isCompleted = badge.bronze;
+          const isAdminUnlocked = admin?.allUnlocked || admin?.unlockedStages?.includes(stage.id);
 
           return (
             <div
               key={stage.id}
               onClick={() => {
-                if (isUnlocked) onSelectStage(stage.id);
+                if (isUnlocked) {
+                  onSelectStage(stage.id);
+                } else {
+                  onOpenAdminPanel();
+                }
               }}
               className={`rounded-2xl p-3.5 transition-all border shadow-sm relative overflow-hidden ${
                 !isUnlocked
-                  ? 'bg-stone-100 border-stone-200 opacity-60 cursor-not-allowed'
+                  ? 'bg-stone-100 border-stone-200 opacity-60 cursor-pointer hover:opacity-80'
                   : isCompleted
                   ? 'bg-white border-emerald-300/80 hover:border-emerald-500 cursor-pointer hover:shadow-md'
                   : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 hover:border-amber-500 cursor-pointer hover:shadow-md ring-2 ring-amber-400/30'
@@ -154,6 +176,11 @@ export function TrilhaMap({ gameState, onSelectStage }) {
                         Av2
                       </span>
                     )}
+                    {isAdminUnlocked && !isCompleted && (
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">
+                        Liberada 🔓
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-sm font-bold text-stone-900 truncate">
                     {stage.title}
@@ -169,23 +196,29 @@ export function TrilhaMap({ gameState, onSelectStage }) {
                   {badge.prata && <span title="Selo Prata: Desafio Superado">🥈</span>}
                   {badge.ouro && <span title="Selo Ouro: Missão de Campo Validada">🥇</span>}
                   
-                  {isUnlocked && (
+                  {isUnlocked ? (
                     <ChevronRight className="w-5 h-5 text-stone-400" />
+                  ) : (
+                    <KeyRound className="w-4 h-4 text-stone-400" title="Bloqueada pelo Admin" />
                   )}
                 </div>
               </div>
 
               {/* Learning preview pill */}
-              {isUnlocked && (
-                <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between text-[11px]">
-                  <span className="text-stone-500 italic truncate max-w-[240px]">
-                    Oficina: {stage.selo.name}
-                  </span>
-                  <span className={`font-semibold ${isCompleted ? 'text-emerald-700' : 'text-amber-700'}`}>
-                    {isCompleted ? 'Concluída ✓' : 'Disponível ▶'}
-                  </span>
-                </div>
-              )}
+              <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between text-[11px]">
+                <span className="text-stone-500 italic truncate max-w-[220px]">
+                  Oficina: {stage.selo.name}
+                </span>
+                <span className={`font-semibold ${
+                  isCompleted 
+                    ? 'text-emerald-700' 
+                    : isUnlocked 
+                    ? 'text-amber-700' 
+                    : 'text-stone-400'
+                }`}>
+                  {isCompleted ? 'Concluída ✓' : isUnlocked ? 'Disponível ▶' : 'Requer Senha 🔒'}
+                </span>
+              </div>
             </div>
           );
         })}

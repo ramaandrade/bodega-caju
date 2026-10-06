@@ -3,7 +3,8 @@ import {
   loadGameState, 
   saveGameState, 
   createInitialState, 
-  getPlayerLevel 
+  getPlayerLevel,
+  isStageUnlocked
 } from './utils/storage';
 import { PLAYABLE_BUSINESSES } from './data/businesses';
 import { STAGES_DATA } from './data/stages';
@@ -17,6 +18,7 @@ import { SimuladoAv2 } from './components/ModoRevisao/SimuladoAv2';
 import { TurmaHub } from './components/PainelProfessor/TurmaHub';
 import { CalculatorModal } from './components/CalculatorModal';
 import { GlossarioModal } from './components/GlossarioModal';
+import { AdminPanelModal } from './components/AdminPanelModal';
 import { Sparkles, Store, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -39,6 +41,7 @@ export default function App() {
   // Modals state
   const [showCalculator, setShowCalculator] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   // Onboarding temp state
   const [onboardingBiz, setOnboardingBiz] = useState(PLAYABLE_BUSINESSES[0]);
@@ -202,6 +205,17 @@ export default function App() {
     setOnboardingBiz(PLAYABLE_BUSINESSES[0]);
   };
 
+  // Admin Update Stages Handler (Disponibilizar estações com a senha)
+  const handleUpdateAdminStages = (adminConfig) => {
+    setGameState(prev => ({
+      ...prev,
+      admin: {
+        ...prev.admin,
+        ...adminConfig
+      }
+    }));
+  };
+
   // Finish Onboarding
   const handleFinishOnboarding = (biz = onboardingBiz) => {
     const initialState = createInitialState(biz, {
@@ -289,6 +303,7 @@ export default function App() {
         onToggleContrast={handleToggleContrast}
         onToggleFontSize={handleToggleFontSize}
         onResetGame={handleResetGame}
+        onOpenAdminPanel={() => setShowAdminModal(true)}
       />
 
       {/* Main Container - Mobile Centered Shell */}
@@ -312,6 +327,7 @@ export default function App() {
               <TrilhaMap 
                 gameState={gameState} 
                 onSelectStage={(id) => setSelectedStageId(id)} 
+                onOpenAdminPanel={() => setShowAdminModal(true)}
               />
             )}
 
@@ -369,6 +385,14 @@ export default function App() {
       {showGlossary && (
         <GlossarioModal onClose={() => setShowGlossary(false)} />
       )}
+
+      {/* Admin Panel Modal (Senha 430798@R) */}
+      <AdminPanelModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        gameState={gameState}
+        onUpdateAdminStages={handleUpdateAdminStages}
+      />
     </div>
   );
 }

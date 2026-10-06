@@ -11,7 +11,8 @@ import {
   VolumeX, 
   TrendingUp,
   Store,
-  RotateCcw
+  RotateCcw,
+  KeyRound
 } from 'lucide-react';
 import { getPlayerLevel } from '../utils/storage';
 
@@ -22,7 +23,8 @@ export function Navbar({
   onToggleAudio, 
   onToggleContrast,
   onToggleFontSize,
-  onResetGame
+  onResetGame,
+  onOpenAdminPanel
 }) {
   const { businessState, gamification, profile, settings } = gameState;
   const currentLevel = getPlayerLevel(gamification.xp);
@@ -44,7 +46,7 @@ export function Navbar({
             <span className="text-xs font-black tracking-wider text-amber-400 uppercase">
               Bodega CAJU
             </span>
-            <span className="text-[11px] font-semibold text-stone-300 truncate max-w-[100px]">
+            <span className="text-[11px] font-semibold text-stone-300 truncate max-w-[90px]">
               {businessState.name}
             </span>
           </div>
@@ -79,6 +81,16 @@ export function Navbar({
 
         {/* Right: Quick Tool Action Buttons */}
         <div className="flex items-center gap-1">
+          {/* Botão Admin (Senha 430798@R) */}
+          <button 
+            onClick={onOpenAdminPanel}
+            className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-300 active:scale-90 transition-transform"
+            title="Painel do Administrador (Liberar Estações)"
+            aria-label="Admin"
+          >
+            <KeyRound className="w-4 h-4" />
+          </button>
+
           {/* Botão Reiniciar em qualquer momento */}
           <button 
             onClick={() => setShowResetConfirmModal(true)}
@@ -169,7 +181,7 @@ export function Navbar({
             <div className="flex justify-between items-center pb-3 border-b border-stone-800">
               <div className="flex items-center gap-2">
                 <Store className="w-5 h-5 text-amber-400" />
-                <h3 className="font-bold text-base text-amber-200">Painel do Jogador</h3>
+                <h3 className="font-bold text-base text-amber-200">Painel do Negócio</h3>
               </div>
               <button 
                 onClick={() => setShowProfileModal(false)}
@@ -219,13 +231,25 @@ export function Navbar({
               </button>
             </div>
 
+            {/* Acesso ao Painel do Administrador */}
+            <button
+              onClick={() => {
+                setShowProfileModal(false);
+                onOpenAdminPanel();
+              }}
+              className="w-full mt-3 py-2 px-3 rounded-xl bg-amber-500/10 border border-amber-600/40 text-amber-300 hover:bg-amber-500/20 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+              <span>Painel do Administrador (Senha 430798@R)</span>
+            </button>
+
             {/* Ação rápida para Reiniciar dentro do perfil */}
             <button
               onClick={() => {
                 setShowProfileModal(false);
                 setShowResetConfirmModal(true);
               }}
-              className="w-full mt-3 py-2 px-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 hover:bg-rose-900/60 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              className="w-full mt-2 py-2 px-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 hover:bg-rose-900/60 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reiniciar Jornada / Trocar de Negócio</span>

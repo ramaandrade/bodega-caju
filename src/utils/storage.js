@@ -19,6 +19,14 @@ export function getPlayerLevel(xp) {
   return current;
 }
 
+export function isStageUnlocked(gameState, stageId) {
+  if (!gameState) return stageId === 1;
+  if (gameState.admin?.allUnlocked) return true;
+  if (gameState.admin?.unlockedStages?.includes(stageId)) return true;
+  if (stageId <= (gameState.gamification?.highestUnlockedStage || 1)) return true;
+  return false;
+}
+
 export function loadGameState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -64,6 +72,11 @@ export function createInitialState(business, profileData = {}) {
       completedStages: [1], // stage 1 unlocked initially
       highestUnlockedStage: 1,
       quizScores: {}
+    },
+    admin: {
+      password: '430798@R',
+      unlockedStages: [1], // independent stations unlocked by admin
+      allUnlocked: false
     },
     reflections: {}, // { stageId: "text" }
     fieldMissions: {}, // { stageId: { text, photoUrl, status: 'enviada', feedback: '' } }
