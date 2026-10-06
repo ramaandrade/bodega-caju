@@ -10,7 +10,8 @@ import {
   Volume2, 
   VolumeX, 
   TrendingUp,
-  Store
+  Store,
+  RotateCcw
 } from 'lucide-react';
 import { getPlayerLevel } from '../utils/storage';
 
@@ -20,11 +21,13 @@ export function Navbar({
   onOpenGlossary, 
   onToggleAudio, 
   onToggleContrast,
-  onToggleFontSize 
+  onToggleFontSize,
+  onResetGame
 }) {
   const { businessState, gamification, profile, settings } = gameState;
   const currentLevel = getPlayerLevel(gamification.xp);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 bg-stone-900/95 backdrop-blur-md text-amber-50 border-b border-amber-900/40 px-3 py-2 shadow-md">
@@ -41,14 +44,14 @@ export function Navbar({
             <span className="text-xs font-black tracking-wider text-amber-400 uppercase">
               Bodega CAJU
             </span>
-            <span className="text-[11px] font-semibold text-stone-300 truncate max-w-[110px]">
+            <span className="text-[11px] font-semibold text-stone-300 truncate max-w-[100px]">
               {businessState.name}
             </span>
           </div>
         </div>
 
         {/* Center: Live Economic HUD */}
-        <div className="flex items-center gap-2 bg-stone-800/90 px-2.5 py-1 rounded-xl border border-stone-700/60 shadow-sm text-xs">
+        <div className="flex items-center gap-2 bg-stone-800/90 px-2 py-1 rounded-xl border border-stone-700/60 shadow-sm text-xs">
           {/* Caixa do Negócio */}
           <div className="flex items-center gap-1 font-mono font-bold" title="Caixa do Negócio">
             <Wallet className="w-3.5 h-3.5 text-emerald-400" />
@@ -76,6 +79,16 @@ export function Navbar({
 
         {/* Right: Quick Tool Action Buttons */}
         <div className="flex items-center gap-1">
+          {/* Botão Reiniciar em qualquer momento */}
+          <button 
+            onClick={() => setShowResetConfirmModal(true)}
+            className="p-1.5 rounded-lg bg-stone-800 hover:bg-rose-950/70 text-stone-300 hover:text-rose-300 active:scale-90 transition-transform"
+            title="Reiniciar a Jornada a qualquer momento"
+            aria-label="Reiniciar a Bodega"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+
           {/* Calculadora embutida */}
           <button 
             onClick={onOpenCalculator}
@@ -108,6 +121,46 @@ export function Navbar({
           </button>
         </div>
       </div>
+
+      {/* Modal de Confirmação para Reiniciar */}
+      {showResetConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-rose-500/50 rounded-3xl max-w-sm w-full p-5 text-stone-100 shadow-2xl animate-in zoom-in-95 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 text-xl shadow-inner">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-white">Reiniciar a Bodega?</h3>
+                <span className="text-[11px] text-stone-400">Recomeçar sua história em Vila Araripe</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-stone-300 leading-relaxed bg-stone-950/60 p-3 rounded-2xl border border-stone-800">
+              Você pode reiniciar a qualquer momento para <b>escolher outro negócio</b> (Marmitaria, Romaria, Couro, Bodega ou Feira), redefinir o caixa e recomeçar as estações do zero.
+            </p>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setShowResetConfirmModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs active:scale-95 transition-all"
+              >
+                Continuar Jogando
+              </button>
+              <button
+                onClick={() => {
+                  setShowResetConfirmModal(false);
+                  setShowProfileModal(false);
+                  onResetGame();
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs shadow-lg active:scale-95 transition-all"
+              >
+                Sim, Reiniciar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Perfil Rápido */}
       {showProfileModal && (
@@ -151,7 +204,7 @@ export function Navbar({
               </div>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-stone-800 flex gap-2">
+            <div className="mt-2 pt-2 border-t border-stone-800 flex gap-2">
               <button 
                 onClick={onToggleContrast}
                 className="flex-1 py-1.5 px-2 rounded-lg bg-stone-800 hover:bg-stone-700 text-[11px] font-semibold text-stone-200 text-center"
@@ -165,6 +218,18 @@ export function Navbar({
                 Fonte: {settings.fontSize === 'large' ? 'Grande' : 'Normal'}
               </button>
             </div>
+
+            {/* Ação rápida para Reiniciar dentro do perfil */}
+            <button
+              onClick={() => {
+                setShowProfileModal(false);
+                setShowResetConfirmModal(true);
+              }}
+              className="w-full mt-3 py-2 px-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 hover:bg-rose-900/60 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reiniciar Jornada / Trocar de Negócio</span>
+            </button>
           </div>
         </div>
       )}

@@ -195,6 +195,17 @@ export default function App() {
     }));
   };
 
+  // Reset Game Handler (Reiniciar a qualquer momento)
+  const handleResetGame = () => {
+    localStorage.removeItem('bodega_caju_save_v1');
+    const fresh = createInitialState(PLAYABLE_BUSINESSES[0]);
+    setGameState(fresh);
+    setHasStarted(false);
+    setSelectedStageId(null);
+    setActiveTab('trilha');
+    setOnboardingBiz(PLAYABLE_BUSINESSES[0]);
+  };
+
   // Finish Onboarding
   const handleFinishOnboarding = () => {
     const initialState = createInitialState(onboardingBiz, {
@@ -338,6 +349,7 @@ export default function App() {
         onToggleAudio={handleToggleAudio}
         onToggleContrast={handleToggleContrast}
         onToggleFontSize={handleToggleFontSize}
+        onResetGame={handleResetGame}
       />
 
       {/* Main Container - Mobile Centered Shell */}
