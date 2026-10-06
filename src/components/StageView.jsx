@@ -145,22 +145,58 @@ export function StageView({
         </div>
       </div>
 
-      {/* 7-Moments Horizontal Stepper (Swipeable on Mobile) */}
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
-        {moments.map((m, idx) => {
+      {/* 4 Botões Principais do Ciclo (100% visíveis, sem corte na tela) */}
+      <div className="grid grid-cols-4 gap-1.5 p-1 bg-amber-50/80 rounded-2xl border border-amber-200/80 shadow-sm">
+        {moments.slice(0, 4).map((m, idx) => {
           const isActive = activeMoment === idx;
           return (
             <button
               key={m.id}
               onClick={() => setActiveMoment(idx)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`py-2 px-1 rounded-xl text-center flex flex-col items-center justify-center transition-all ${
                 isActive
-                  ? 'bg-amber-600 text-white shadow-md scale-105'
-                  : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                  ? 'bg-amber-600 text-white shadow-md font-extrabold scale-[1.02]'
+                  : 'bg-white border border-stone-200/90 text-stone-700 hover:bg-stone-50 font-bold'
               }`}
             >
-              <span>{m.icon}</span>
-              <span>{m.title}</span>
+              <span className="text-base sm:text-lg mb-0.5 leading-none">{m.icon}</span>
+              <span className="text-[11px] sm:text-xs leading-tight font-extrabold whitespace-nowrap">
+                {m.id === 'causo' && '1. Causo'}
+                {m.id === 'cartas' && (
+                  <>
+                    <span>2. Cartas</span>
+                    <span className="hidden sm:inline text-[9px] opacity-80"> de Saber</span>
+                  </>
+                )}
+                {m.id === 'oficina' && '3. Oficina'}
+                {m.id === 'desafio' && '4. Desafio'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3 Momentos de Aprofundamento & Prática (Lente CAJU, Realidade Local, Missão & Selo) */}
+      <div className="grid grid-cols-3 gap-1.5 p-1 bg-stone-100/70 rounded-2xl border border-stone-200/70">
+        {moments.slice(4).map((m, idx) => {
+          const realIdx = idx + 4;
+          const isActive = activeMoment === realIdx;
+          return (
+            <button
+              key={m.id}
+              onClick={() => setActiveMoment(realIdx)}
+              className={`py-1.5 px-1 rounded-xl text-center flex items-center justify-center gap-1 transition-all ${
+                isActive
+                  ? 'bg-amber-700 text-white shadow-md font-extrabold scale-[1.02]'
+                  : 'bg-white/90 border border-stone-200/80 text-stone-600 hover:bg-white font-semibold'
+              }`}
+            >
+              <span className="text-xs sm:text-sm leading-none">{m.icon}</span>
+              <span className="text-[10px] sm:text-xs font-bold leading-tight whitespace-nowrap">
+                {m.id === 'lente' && '5. Lente CAJU'}
+                {m.id === 'realidade' && '6. Realidade'}
+                {m.id === 'missao' && '7. Missão & Selo'}
+              </span>
             </button>
           );
         })}
