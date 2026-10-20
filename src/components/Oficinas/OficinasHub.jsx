@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Check, 
   RefreshCw, 
@@ -111,6 +111,14 @@ function OficinaGaveta({ businessState, onUpdateCash, onRewardCajus }) {
   const [classified, setClassified] = useState({});
   const [proLabore, setProlabore] = useState(1500);
   const [finalized, setFinalized] = useState(false);
+  const [calcSummary, setCalcSummary] = useState({ businessIn: 0, businessOut: 0, personalOut: 0, netProfit: 0 });
+
+  useEffect(() => {
+    const freshItems = GAVETA_ITEMS_BY_BIZ[bizId] || GAVETA_ITEMS_BY_BIZ.marmitaria;
+    setItems(freshItems);
+    setClassified({});
+    setFinalized(false);
+  }, [bizId]);
 
   const handleClassify = (id, choice) => {
     setClassified(prev => ({ ...prev, [id]: choice }));
@@ -125,11 +133,18 @@ function OficinaGaveta({ businessState, onUpdateCash, onRewardCajus }) {
     items.forEach(it => {
       if (classified[it.id] === it.correct) correctCount++;
       if (it.correct === 'negocio') {
-        if (it.val === 525) businessIn += it.val;
+        if (it.id === 3) businessIn += it.val;
         else businessOut += it.val;
       } else {
         personalOut += it.val;
       }
+    });
+
+    setCalcSummary({
+      businessIn,
+      businessOut,
+      personalOut,
+      netProfit: businessIn - businessOut
     });
 
     setFinalized(true);
@@ -142,9 +157,9 @@ function OficinaGaveta({ businessState, onUpdateCash, onRewardCajus }) {
   return (
     <div className="space-y-4 text-xs">
       <div className="bg-amber-100 border border-amber-300 p-3 rounded-2xl">
-        <h4 className="font-bold text-amber-900 text-sm">Oficina: A Gaveta Misturada</h4>
+        <h4 className="font-bold text-amber-900 text-sm">Oficina: A Gaveta Misturada ({businessState?.name || 'Seu Negócio'})</h4>
         <p className="text-stone-700 mt-1">
-          Socorro encontrou 8 comprovantes na gaveta. Separe cada um clicando em <b>Negócio</b> ou <b>Casa</b> para revelar o vazamento de dinheiro!
+          <b>{businessState?.owner || 'O empreendedor'}</b> encontrou 8 comprovantes na gaveta. Separe cada um clicando em <b>Negócio</b> ou <b>Casa</b> para revelar o vazamento de dinheiro!
         </p>
       </div>
 
@@ -225,24 +240,26 @@ function OficinaGaveta({ businessState, onUpdateCash, onRewardCajus }) {
           <div className="grid grid-cols-2 gap-2 text-[11px]">
             <div className="bg-stone-800 p-2.5 rounded-xl border border-stone-700">
               <span className="text-stone-400">Total Faturamento:</span>
-              <div className="text-base font-bold text-emerald-400">R$ 525,00</div>
+              <div className="text-base font-bold text-emerald-400">R$ {calcSummary.businessIn.toFixed(2)}</div>
             </div>
             <div className="bg-stone-800 p-2.5 rounded-xl border border-stone-700">
               <span className="text-stone-400">Custos Reais do Negócio:</span>
-              <div className="text-base font-bold text-amber-300">R$ 445,00</div>
+              <div className="text-base font-bold text-amber-300">R$ {calcSummary.businessOut.toFixed(2)}</div>
             </div>
             <div className="bg-stone-800 p-2.5 rounded-xl border border-stone-700">
               <span className="text-stone-400">Lucro Operacional Puro:</span>
-              <div className="text-base font-bold text-emerald-400">+ R$ 80,00</div>
+              <div className={`text-base font-bold ${calcSummary.netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {calcSummary.netProfit >= 0 ? '+' : ''} R$ {calcSummary.netProfit.toFixed(2)}
+              </div>
             </div>
             <div className="bg-stone-800 p-2.5 rounded-xl border border-rose-900/60 bg-rose-950/20">
               <span className="text-rose-400">Vazamento para a Casa:</span>
-              <div className="text-base font-bold text-rose-400">R$ 805,00</div>
+              <div className="text-base font-bold text-rose-400">R$ {calcSummary.personalOut.toFixed(2)}</div>
             </div>
           </div>
 
           <p className="text-stone-300 leading-relaxed text-[11px]">
-            <b>Conclusão:</b> O negócio deu R$ 80 de lucro no dia! Mas como a casa retirou R$ 805 na mesma semana sem planejamento, faltou dinheiro no caixa da bodega. A solução é fixar o Pró-Labore!
+            <b>Conclusão:</b> {businessState?.name || 'Seu negócio'} gerou <b>R$ {calcSummary.netProfit.toFixed(2)}</b> de lucro operacional! Mas como foram retirados <b>R$ {calcSummary.personalOut.toFixed(2)}</b> para despesas da casa sem planejamento, o caixa sofre sangria. A solução imediata é estipular e respeitar o <b>Pró-Labore</b> fixo!
           </p>
         </div>
       )}
@@ -387,9 +404,9 @@ function OficinaCalendario({ businessState, onUpdateCash, onRewardCajus }) {
     { name: 'Dez', season: 'Safra Pequi', demand: 1.3 }
   ];
 
-  const baseFixed = 1200;
-  const baseRevenue = 3000;
-  const baseVariable = 1600;
+  const baseFixed = (businessState?.dailyFixedCost || 35) * 30;
+  const baseRevenue = (businessState?.averagePrice || 15) * (businessState?.salesPerDay || 30) * 25;
+  const baseVariable = (businessState?.variableCostUnit || 8.4) * (businessState?.salesPerDay || 30) * 25;
 
   let reserveTotal = 0;
   let negativeMonths = 0;
@@ -480,6 +497,16 @@ function OficinaCalendario({ businessState, onUpdateCash, onRewardCajus }) {
 function OficinaCaixa({ businessState, onUpdateCash, onRewardCajus }) {
   const [actionChosen, setActionChosen] = useState(null);
 
+  const supplierText = businessState?.id === 'barraca_romaria' ? 'do distribuidor de terços e artigos religiosos' :
+    businessState?.id === 'atelie_couro' ? 'do curtume de couro e fivelas' :
+    businessState?.id === 'bodega_bairro' ? 'do distribuidor atacadista de secos e molhados' :
+    businessState?.id === 'banca_feira' ? 'do frete da caminhonete e fornecedor rural de hortifrúti' :
+    'do distribuidor de carnes e embalagens';
+
+  const option2Text = businessState?.id === 'bodega_bairro' 
+    ? '2. Enviar mensagem amigável no WhatsApp cobrando clientes com a caderneta de fiado vencida'
+    : '2. Enviar mensagem amigável no WhatsApp cobrando clientes com pagamentos pendentes no Pix';
+
   const handleAction = (type) => {
     setActionChosen(type);
     if (type === 'renegociar') {
@@ -493,9 +520,9 @@ function OficinaCaixa({ businessState, onUpdateCash, onRewardCajus }) {
   return (
     <div className="space-y-4 text-xs">
       <div className="bg-amber-100 border border-amber-300 p-3 rounded-2xl">
-        <h4 className="font-bold text-amber-900 text-sm">Oficina: O Apuro do Dia 10</h4>
+        <h4 className="font-bold text-amber-900 text-sm">Oficina: O Apuro do Dia 10 ({businessState?.name || 'Seu Negócio'})</h4>
         <p className="text-stone-700 mt-1">
-          É dia 10. Você tem <b>R$ 300 em saldo</b>, mas um boleto de <b>R$ 800 do distribuidor de bebidas</b> vence hoje às 17h. O que fazer?
+          É dia 10. Você tem <b>R$ 300 em saldo</b>, mas um boleto de <b>R$ 800 {supplierText}</b> vence hoje às 17h. O que fazer?
         </p>
       </div>
 
@@ -516,7 +543,7 @@ function OficinaCaixa({ businessState, onUpdateCash, onRewardCajus }) {
             actionChosen === 'cobrar_fiado' ? 'bg-amber-100 border-amber-500 font-bold' : 'bg-white border-stone-200 hover:bg-stone-50'
           }`}
         >
-          <div className="font-bold text-stone-900">2. Enviar mensagem amigável no WhatsApp cobrando clientes com fiado vencido</div>
+          <div className="font-bold text-stone-900">{option2Text}</div>
           <p className="text-[11px] text-stone-600 mt-0.5">Recupera até R$ 400 no Pix com baixo custo de transação.</p>
         </button>
 
@@ -871,12 +898,24 @@ function OficinaCredito({ businessState, onUpdateCash, onRewardCajus }) {
 function OficinaInvestimentos({ businessState, onUpdateCash, onRewardCajus }) {
   const [allocation, setAllocation] = useState({ freezer: 1200, tesouro: 800, scam: 0 });
 
+  const machineName = businessState?.id === 'barraca_romaria' ? '1. Estrutura de Barraca Galvanizada (Romaria)' :
+    businessState?.id === 'atelie_couro' ? '1. Máquina Desbastadeira de Couro (Ateliê)' :
+    businessState?.id === 'bodega_bairro' ? '1. Balança Digital e Leitor de Barras (Bodega)' :
+    businessState?.id === 'banca_feira' ? '1. Toldo Térmico e Caixas Plásticas (Feira)' :
+    '1. Fogão Industrial & Freezer (Marmitaria)';
+
+  const machineDesc = businessState?.id === 'barraca_romaria' ? 'Payback de 5 meses; economiza R$ 300/mês em frete e montagem.' :
+    businessState?.id === 'atelie_couro' ? 'Payback de 6 meses; aumenta produção em R$ 500/mês.' :
+    businessState?.id === 'bodega_bairro' ? 'Payback de 6 meses; reduz perdas e acelera vendas em R$ 400/mês.' :
+    businessState?.id === 'banca_feira' ? 'Payback de 4 meses; reduz perdas com calor em R$ 300/mês.' :
+    'Payback de 5 meses; gera economia de gás e insumos de R$ 240/mês.';
+
   const total = allocation.freezer + allocation.tesouro + allocation.scam;
 
   return (
     <div className="space-y-4 text-xs">
       <div className="bg-amber-100 border border-amber-300 p-3 rounded-2xl">
-        <h4 className="font-bold text-amber-900 text-sm">Oficina: Alocação de Sementes</h4>
+        <h4 className="font-bold text-amber-900 text-sm">Oficina: Alocação de Sementes ({businessState?.name || 'Seu Negócio'})</h4>
         <p className="text-stone-700 mt-1">
           Você tem R$ 2.000 para investir. Onde aplicar para obter o melhor retorno real protegido de golpes?
         </p>
@@ -885,10 +924,10 @@ function OficinaInvestimentos({ businessState, onUpdateCash, onRewardCajus }) {
       <div className="space-y-2">
         <div className="bg-white p-3 rounded-xl border border-stone-200">
           <div className="flex justify-between">
-            <span className="font-bold text-stone-800">1. Maquinário / Freezer Novo (Negócio)</span>
+            <span className="font-bold text-stone-800">{machineName}</span>
             <span className="font-mono text-emerald-700 font-bold">R$ {allocation.freezer}</span>
           </div>
-          <p className="text-[10px] text-stone-500">Payback de 5 meses; gera economia diária de R$ 240/mês.</p>
+          <p className="text-[10px] text-stone-500">{machineDesc}</p>
         </div>
 
         <div className="bg-white p-3 rounded-xl border border-stone-200">
@@ -915,12 +954,26 @@ function OficinaInvestimentos({ businessState, onUpdateCash, onRewardCajus }) {
 // 10. OFICINA PAINEL DO NEGÓCIO (Estação 10 - Indicadores)
 // ----------------------------------------------------
 function OficinaIndicadores({ businessState }) {
+  const price = businessState?.averagePrice || 15;
+  const cvu = businessState?.variableCostUnit || 8.4;
+  const mcPercent = Math.round(((price - cvu) / price) * 100);
+
+  const giroDias = businessState?.id === 'banca_feira' ? '2 dias' :
+    businessState?.id === 'marmitaria' ? '4 dias' :
+    businessState?.id === 'bodega_bairro' ? '20 dias' :
+    businessState?.id === 'atelie_couro' ? '25 dias' :
+    '35 dias';
+
+  const giroObs = businessState?.id === 'banca_feira' || businessState?.id === 'marmitaria'
+    ? 'Excelente giro de perecíveis'
+    : 'Atenção ao prazo médio de estoque';
+
   return (
     <div className="space-y-4 text-xs">
       <div className="bg-amber-100 border border-amber-300 p-3 rounded-2xl">
-        <h4 className="font-bold text-amber-900 text-sm">Oficina: O Semáforo do Negócio</h4>
+        <h4 className="font-bold text-amber-900 text-sm">Oficina: O Semáforo do Negócio ({businessState?.name || 'Seu Negócio'})</h4>
         <p className="text-stone-700 mt-1">
-          Os 4 indicadores vitais do seu estabelecimento em tempo real:
+          Os 4 indicadores vitais de <b>{businessState?.name}</b> em tempo real:
         </p>
       </div>
 
@@ -928,22 +981,22 @@ function OficinaIndicadores({ businessState }) {
         <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-2xl text-center">
           <div className="text-lg">🟢</div>
           <span className="text-[10px] text-emerald-800 font-semibold uppercase">Margem de Contribuição</span>
-          <div className="text-base font-bold font-mono text-emerald-900 mt-1">44%</div>
-          <span className="text-[9px] text-emerald-700">Saudável (&gt; 35%)</span>
+          <div className="text-base font-bold font-mono text-emerald-900 mt-1">{mcPercent}%</div>
+          <span className="text-[9px] text-emerald-700">Saudável (&gt; 25%)</span>
         </div>
 
         <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-2xl text-center">
           <div className="text-lg">🟢</div>
           <span className="text-[10px] text-emerald-800 font-semibold uppercase">Ponto de Equilíbrio</span>
-          <div className="text-base font-bold font-mono text-emerald-900 mt-1">Dia 16</div>
+          <div className="text-base font-bold font-mono text-emerald-900 mt-1">Dia 15</div>
           <span className="text-[9px] text-emerald-700">Atingido a cada mês</span>
         </div>
 
         <div className="bg-amber-50 border border-amber-300 p-3 rounded-2xl text-center">
           <div className="text-lg">🟡</div>
           <span className="text-[10px] text-amber-800 font-semibold uppercase">Giro de Estoque</span>
-          <div className="text-base font-bold font-mono text-amber-900 mt-1">18 dias</div>
-          <span className="text-[9px] text-amber-700">Atenção a perecíveis</span>
+          <div className="text-base font-bold font-mono text-amber-900 mt-1">{giroDias}</div>
+          <span className="text-[9px] text-amber-700">{giroObs}</span>
         </div>
 
         <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-2xl text-center">
@@ -963,9 +1016,15 @@ function OficinaIndicadores({ businessState }) {
 function OficinaCompliance({ businessState, onUpdateCash, onRewardCajus }) {
   const [checked, setChecked] = useState({});
 
+  const hygieneItem = businessState?.id === 'barraca_romaria' ? 'Alvará municipal de ambulante e extintor no ponto' :
+    businessState?.id === 'atelie_couro' ? 'EPIs de proteção (máscaras e óculos) na oficina de couro' :
+    businessState?.id === 'bodega_bairro' ? 'Validade visível nos alimentos e higiene dos freezers' :
+    businessState?.id === 'banca_feira' ? 'Bancada elevada do chão e sacolas adequadas para alimentos' :
+    'Álcool 70%, toucas e aventais na cozinha';
+
   const items = [
     { id: 1, title: 'CNPJ MEI Ativo & DAS pago em dia', points: 30 },
-    { id: 2, title: 'Álcool 70%, toucas e aventais na cozinha', points: 25 },
+    { id: 2, title: hygieneItem, points: 25 },
     { id: 3, title: 'Extintor de incêndio com lacre válido', points: 20 },
     { id: 4, title: 'Tabela de preços visível ao consumidor', points: 25 },
   ];
@@ -1021,19 +1080,37 @@ function OficinaCompliance({ businessState, onUpdateCash, onRewardCajus }) {
 // 12. OFICINA MATRIZ DA SECA (Estação 12 - Riscos)
 // ----------------------------------------------------
 function OficinaRiscos({ businessState }) {
+  const risk1 = businessState?.id === 'barraca_romaria' ? 'Chuva no dia da romaria' :
+    businessState?.id === 'atelie_couro' ? 'Aumento no frete de couro' :
+    businessState?.id === 'bodega_bairro' ? 'Aumento do atacadista' :
+    businessState?.id === 'banca_feira' ? 'Queima de preço na feira' :
+    'Alta do gás e carnes';
+
+  const riskCritical = businessState?.id === 'barraca_romaria' ? 'Santeiro de gesso atrasar' :
+    businessState?.id === 'atelie_couro' ? 'Curtume parar fornecimento' :
+    businessState?.id === 'bodega_bairro' ? 'Calote em massa no fiado' :
+    businessState?.id === 'banca_feira' ? 'Caminhonete do frete quebrar' :
+    'Fornecedor único de frango falhar';
+
+  const riskSpecial = businessState?.id === 'bodega_bairro' ? 'Inadimplência na caderneta' :
+    businessState?.id === 'banca_feira' ? 'Calor queimar hortifrúti' :
+    businessState?.id === 'atelie_couro' ? 'Máquina pesada quebrar' :
+    businessState?.id === 'barraca_romaria' ? 'Falta de troco na muvuca' :
+    'Freezer duplex quebrar';
+
   return (
     <div className="space-y-4 text-xs">
       <div className="bg-amber-100 border border-amber-300 p-3 rounded-2xl">
-        <h4 className="font-bold text-amber-900 text-sm">Oficina: A Matriz de Riscos 3x3</h4>
+        <h4 className="font-bold text-amber-900 text-sm">Oficina: A Matriz de Riscos 3x3 ({businessState?.name || 'Seu Negócio'})</h4>
         <p className="text-stone-700 mt-1">
-          Posicionamento dos principais riscos climáticos e econômicos do Cariri:
+          Posicionamento dos principais riscos operacionais e econômicos para <b>{businessState?.name}</b>:
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
         <div className="bg-amber-100/60 p-2 rounded-lg border border-amber-200">
           <span className="font-bold text-stone-700">Médio</span>
-          <p className="text-[9px] text-stone-500 mt-1">Alta do gás</p>
+          <p className="text-[9px] text-stone-600 mt-1">{risk1}</p>
         </div>
         <div className="bg-rose-100 p-2 rounded-lg border border-rose-300 font-bold text-rose-800">
           <span>Alto</span>
@@ -1041,20 +1118,20 @@ function OficinaRiscos({ businessState }) {
         </div>
         <div className="bg-rose-200 p-2 rounded-lg border border-rose-400 font-bold text-rose-950">
           <span>Crítico</span>
-          <p className="text-[9px] text-rose-900 mt-1">Fornecedor único falhar</p>
+          <p className="text-[9px] text-rose-900 mt-1">{riskCritical}</p>
         </div>
 
         <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-200">
           <span className="font-bold text-emerald-800">Baixo</span>
-          <p className="text-[9px] text-stone-500 mt-1">Falta de troco</p>
+          <p className="text-[9px] text-stone-500 mt-1">Falta de troco miúdo</p>
         </div>
         <div className="bg-amber-50 p-2 rounded-lg border border-amber-200">
           <span className="font-bold text-amber-800">Médio</span>
-          <p className="text-[9px] text-stone-500 mt-1">Golpe do Pix falso</p>
+          <p className="text-[9px] text-stone-500 mt-1">Golpe do Pix agendado</p>
         </div>
         <div className="bg-rose-100 p-2 rounded-lg border border-rose-300 font-bold text-rose-800">
           <span>Alto</span>
-          <p className="text-[9px] text-rose-700 mt-1">Cliente devendo fiado alto</p>
+          <p className="text-[9px] text-rose-700 mt-1">{riskSpecial}</p>
         </div>
       </div>
     </div>

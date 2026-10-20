@@ -1,3 +1,5 @@
+import { BUSINESS_STAGE_CONTENT } from './businessStageContent.js';
+
 export const STAGES_DATA = [
   {
     id: 1,
@@ -1397,3 +1399,45 @@ export const STAGES_DATA = [
     selo: { name: 'Castanha Protegida', icon: '🛡️' }
   }
 ];
+
+/**
+ * Retorna os dados da estação adaptados dinamicamente para o negócio escolhido
+ * (Marmitaria da Socorro, Barraca de Romaria do Seu Expedito, Ateliê Couro & Palha,
+ * Bodega do Bairro da Vila ou Banca de Frutas & Raízes).
+ */
+export function getStageData(stageId, businessState) {
+  const baseStage = STAGES_DATA.find(s => s.id === stageId);
+  if (!baseStage) return null;
+
+  const bizId = businessState?.id || 'marmitaria';
+  const bizContent = BUSINESS_STAGE_CONTENT[bizId]?.[stageId];
+
+  if (!bizContent) {
+    return baseStage;
+  }
+
+  return {
+    ...baseStage,
+    causo: bizContent.causo ? { ...baseStage.causo, ...bizContent.causo } : baseStage.causo,
+    saberCards: baseStage.saberCards.map(card => {
+      if ((card.badge === 'Na Prática' || card.type === 'Exemplo') && bizContent.exampleCard) {
+        return {
+          ...card,
+          title: bizContent.exampleCard.title,
+          content: bizContent.exampleCard.content
+        };
+      }
+      return card;
+    }),
+    challengeQuestions: baseStage.challengeQuestions.map(q => {
+      const customQ = bizContent.questions?.[q.id];
+      if (customQ) {
+        return {
+          ...q,
+          ...customQ
+        };
+      }
+      return q;
+    })
+  };
+}

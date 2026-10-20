@@ -7,7 +7,7 @@ import {
   isStageUnlocked
 } from './utils/storage';
 import { PLAYABLE_BUSINESSES } from './data/businesses';
-import { STAGES_DATA } from './data/stages';
+import { STAGES_DATA, getStageData } from './data/stages';
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
 import { TrilhaMap } from './components/TrilhaMap';
@@ -228,7 +228,7 @@ export default function App() {
     confetti({ particleCount: 80, spread: 90 });
   };
 
-  const selectedStage = STAGES_DATA.find(s => s.id === selectedStageId);
+  const selectedStage = getStageData(selectedStageId, gameState.businessState);
   const isHighContrast = gameState.settings?.highContrast;
   const isLargeFont = gameState.settings?.fontSize === 'large';
 
