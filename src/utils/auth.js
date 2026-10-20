@@ -139,6 +139,60 @@ export function removeStudentEmail(emailToRemove) {
 }
 
 /**
+ * Atualiza um e-mail de estudante existente (CRUD - Update)
+ */
+export function updateStudentEmail(oldEmail, newEmail) {
+  const normOld = (oldEmail || '').trim().toLowerCase();
+  const normNew = (newEmail || '').trim().toLowerCase();
+
+  if (!normNew) {
+    return { success: false, error: 'O novo e-mail não pode ser vazio.' };
+  }
+
+  const emailRegex = /^[^\s@]+@urca\.br$/i;
+  if (!emailRegex.test(normNew)) {
+    return { success: false, error: 'O novo e-mail deve ter formato válido e terminar com @urca.br' };
+  }
+
+  const config = getAccessConfig();
+  const index = config.studentEmails.findIndex(e => e.toLowerCase() === normOld);
+  if (index === -1) {
+    return { success: false, error: 'E-mail anterior não encontrado no cadastro.' };
+  }
+
+  const alreadyExists = config.studentEmails.some((e, idx) => idx !== index && e.toLowerCase() === normNew);
+  if (alreadyExists) {
+    return { success: false, error: 'Este e-mail já está cadastrado para outro aluno.' };
+  }
+
+  config.studentEmails[index] = normNew;
+  config.studentEmails.sort();
+  saveAccessConfig(config);
+
+  return { success: true, studentEmails: config.studentEmails };
+}
+
+/**
+ * Limpa todos os e-mails de estudantes
+ */
+export function clearAllStudentEmails() {
+  const config = getAccessConfig();
+  config.studentEmails = [];
+  saveAccessConfig(config);
+  return { success: true, studentEmails: [] };
+}
+
+/**
+ * Restaura os e-mails padrão da turma
+ */
+export function resetDefaultStudentEmails() {
+  const config = getAccessConfig();
+  config.studentEmails = [...DEFAULT_STUDENT_EMAILS];
+  saveAccessConfig(config);
+  return { success: true, studentEmails: config.studentEmails };
+}
+
+/**
  * Obtém a sessão autenticada ativa
  */
 export function getAuthSession() {

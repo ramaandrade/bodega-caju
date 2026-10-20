@@ -19,6 +19,7 @@ import { TurmaHub } from './components/PainelProfessor/TurmaHub';
 import { CalculatorModal } from './components/CalculatorModal';
 import { GlossarioModal } from './components/GlossarioModal';
 import { AdminPanelModal } from './components/AdminPanelModal';
+import { AdminDashboard } from './components/AdminDashboard';
 import { LoginScreen } from './components/LoginScreen';
 import { getAuthSession, clearAuthSession } from './utils/auth';
 import { Sparkles, Store, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
@@ -33,6 +34,7 @@ export default function App() {
   });
 
   const [authSession, setAuthSession] = useState(() => getAuthSession());
+  const [adminPreviewAsStudent, setAdminPreviewAsStudent] = useState(false);
 
   const [hasStarted, setHasStarted] = useState(() => {
     return Boolean(loadGameState()?.profile?.registeredAt);
@@ -40,11 +42,13 @@ export default function App() {
 
   const handleLoginSuccess = (session) => {
     setAuthSession(session);
+    setAdminPreviewAsStudent(false);
   };
 
   const handleLogout = () => {
     clearAuthSession();
     setAuthSession(null);
+    setAdminPreviewAsStudent(false);
   };
 
   // Navigation state
@@ -250,6 +254,19 @@ export default function App() {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
+  // ---------------- PAINEL DO ADMINISTRADOR (LIBERAÇÃO DAS TRILHAS E CRUD DE ALUNOS) ----------------
+  if (authSession.role === 'admin' && !adminPreviewAsStudent) {
+    return (
+      <AdminDashboard 
+        adminEmail={authSession.email}
+        gameState={gameState}
+        onUpdateAdminStages={handleUpdateAdminStages}
+        onLogout={handleLogout}
+        onPreviewAsStudent={() => setAdminPreviewAsStudent(true)}
+      />
+    );
+  }
+
   // ---------------- ONBOARDING SCREEN (ESCOLHA DIRETA DO NEGÓCIO) ----------------
   if (!hasStarted) {
     return (
@@ -312,6 +329,21 @@ export default function App() {
       isHighContrast ? 'bg-black text-white' : 'bg-amber-50/40 text-stone-900'
     } ${isLargeFont ? 'text-base' : 'text-sm'}`}>
       
+      {/* Banner de Retorno para o Painel do Administrador */}
+      {authSession?.role === 'admin' && adminPreviewAsStudent && (
+        <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white font-bold px-3 py-2 flex items-center justify-between text-xs sticky top-0 z-40 shadow-lg">
+          <span className="flex items-center gap-1.5">
+            👑 <span>Modo Simulação do Administrador</span>
+          </span>
+          <button
+            onClick={() => setAdminPreviewAsStudent(false)}
+            className="px-3 py-1 rounded-lg bg-stone-950 hover:bg-stone-900 text-amber-300 border border-amber-400/40 text-[11px] font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+          >
+            Voltar ao Painel Admin ↩
+          </button>
+        </div>
+      )}
+
       {/* Top Header / HUD */}
       <Navbar 
         gameState={gameState}
