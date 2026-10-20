@@ -23,13 +23,13 @@ export function LoginScreen({ onLoginSuccess }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      const res = authenticateUser(email, password);
+    try {
+      const res = await authenticateUser(email, password);
       setIsLoading(false);
 
       if (res.success) {
@@ -38,7 +38,10 @@ export function LoginScreen({ onLoginSuccess }) {
       } else {
         setErrorMessage(res.error);
       }
-    }, 200);
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage('Falha ao autenticar. Verifique sua conexão e tente novamente.');
+    }
   };
 
   return (

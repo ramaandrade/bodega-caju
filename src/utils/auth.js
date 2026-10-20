@@ -1,6 +1,19 @@
 // =====================================================================
 // AUTENTICAÇÃO E CONTROLE DE ACESSO — BODEGA CAJU (URCA)
+// Integração Híbrida: LocalStorage + Supabase Cloud Database (PostgreSQL)
 // =====================================================================
+
+import {
+  getSupabaseConfig,
+  fetchStudentsFromDb,
+  insertStudentToDb,
+  updateStudentInDb,
+  deleteStudentFromDb,
+  clearAllStudentsFromDb,
+  fetchAccessConfigFromDb,
+  saveAccessConfigToDb,
+  syncLocalStudentsToDb
+} from '../services/supabase';
 
 export const ADMIN_EMAIL = 'rama.lucas@urca.br';
 export const ADMIN_PASSWORD = '430798@R';
@@ -16,7 +29,7 @@ export const STORAGE_AUTH_SESSION = 'bodega_caju_auth_session_v1';
 export const STORAGE_ACCESS_CONFIG = 'bodega_caju_access_config_v1';
 
 /**
- * Obtém as configurações de acesso (senha dos alunos e lista de emails autorizados)
+ * Obtém as configurações de acesso (senha dos alunos e lista de emails autorizados) do cache local
  */
 export function getAccessConfig() {
   try {
@@ -42,7 +55,7 @@ export function getAccessConfig() {
 }
 
 /**
- * Salva as configurações de acesso
+ * Salva as configurações de acesso no localStorage
  */
 export function saveAccessConfig(config) {
   try {
@@ -53,9 +66,40 @@ export function saveAccessConfig(config) {
 }
 
 /**
- * Atualiza a senha única dos alunos
+ * Sincroniza os dados locais com o banco de dados Supabase na nuvem
  */
-export function updateStudentPassword(newPassword) {
+export async function syncFromCloudDb() {
+  try {
+    const dbStudents = await fetchStudentsFromDb();
+    const dbConfig = await fetchAccessConfigFromDb();
+
+    if (!dbStudents && !dbConfig) {
+      return { success: false, error: 'Banco de dados Supabase não configurado ou inacessível.' };
+    }
+
+    const current = getAccessConfig();
+    if (dbStudents && Array.isArray(dbStudents)) {
+      current.studentEmails = dbStudents.map(s => s.email.toLowerCase()).sort();
+    }
+    if (dbConfig?.studentPassword) {
+      current.studentPassword = dbConfig.studentPassword;
+    }
+    saveAccessConfig(current);
+
+    return {
+      success: true,
+      studentCount: current.studentEmails.length,
+      password: current.studentPassword
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Atualiza a senha única dos alunos (no localStorage e no Supabase)
+ */
+export async function updateStudentPassword(newPassword) {
   const trimmed = (newPassword || '').trim();
   if (!trimmed) {
     return { success: false, error: 'A senha não pode ser vazia.' };
@@ -63,24 +107,30 @@ export function updateStudentPassword(newPassword) {
   const config = getAccessConfig();
   config.studentPassword = trimmed;
   saveAccessConfig(config);
+
+  // Sincroniza com Supabase se configurado
+  try {
+    await saveAccessConfigToDb({ studentPassword: trimmed });
+  } catch (err) {
+    console.warn('Aviso: Não foi possível sincronizar senha com o banco Supabase:', err);
+  }
+
   return { success: true, password: trimmed };
 }
 
 /**
  * Restaura a senha dos alunos para o padrão inicial "123456"
  */
-export function resetStudentPasswordToDefault() {
-  const config = getAccessConfig();
-  config.studentPassword = DEFAULT_STUDENT_PASSWORD;
-  saveAccessConfig(config);
-  return { success: true, password: DEFAULT_STUDENT_PASSWORD };
+export async function resetStudentPasswordToDefault() {
+  return await updateStudentPassword(DEFAULT_STUDENT_PASSWORD);
 }
 
 /**
  * Adiciona novos e-mails de estudantes.
  * Valida rigorosamente que todos os e-mails terminem com @urca.br
+ * Grava no localStorage e persiste no banco de dados Supabase.
  */
-export function addStudentEmails(inputText) {
+export async function addStudentEmails(inputText) {
   if (!inputText || typeof inputText !== 'string') {
     return { success: false, error: 'Insira ao menos um e-mail válido.' };
   }
@@ -118,10 +168,12 @@ export function addStudentEmails(inputText) {
   const config = getAccessConfig();
   const currentSet = new Set(config.studentEmails.map(e => e.toLowerCase()));
   let addedCount = 0;
+  const newValidEmails = [];
 
   validEmails.forEach(email => {
     if (!currentSet.has(email)) {
       currentSet.add(email);
+      newValidEmails.push(email);
       addedCount++;
     }
   });
@@ -129,29 +181,49 @@ export function addStudentEmails(inputText) {
   config.studentEmails = Array.from(currentSet).sort();
   saveAccessConfig(config);
 
+  // Sincroniza com o Supabase
+  let dbSynced = false;
+  try {
+    const supabaseConfig = getSupabaseConfig();
+    if (supabaseConfig.isConfigured && newValidEmails.length > 0) {
+      const dbRes = await syncLocalStudentsToDb(newValidEmails);
+      dbSynced = dbRes.success;
+    }
+  } catch (err) {
+    console.warn('Aviso: Falha ao persistir novos alunos no Supabase:', err);
+  }
+
   return {
     success: true,
     addedCount,
     totalCount: config.studentEmails.length,
-    studentEmails: config.studentEmails
+    studentEmails: config.studentEmails,
+    dbSynced
   };
 }
 
 /**
- * Remove um e-mail da lista de alunos autorizados
+ * Remove um e-mail da lista de alunos autorizados (localStorage + Supabase)
  */
-export function removeStudentEmail(emailToRemove) {
+export async function removeStudentEmail(emailToRemove) {
   const config = getAccessConfig();
   const target = (emailToRemove || '').trim().toLowerCase();
   config.studentEmails = config.studentEmails.filter(e => e.toLowerCase() !== target);
   saveAccessConfig(config);
+
+  try {
+    await deleteStudentFromDb(target);
+  } catch (err) {
+    console.warn('Aviso: Falha ao remover aluno do Supabase:', err);
+  }
+
   return { success: true, studentEmails: config.studentEmails };
 }
 
 /**
  * Atualiza um e-mail de estudante existente (CRUD - Update)
  */
-export function updateStudentEmail(oldEmail, newEmail) {
+export async function updateStudentEmail(oldEmail, newEmail) {
   const normOld = (oldEmail || '').trim().toLowerCase();
   const normNew = (newEmail || '').trim().toLowerCase();
 
@@ -179,26 +251,46 @@ export function updateStudentEmail(oldEmail, newEmail) {
   config.studentEmails.sort();
   saveAccessConfig(config);
 
+  try {
+    await updateStudentInDb(normOld, normNew);
+  } catch (err) {
+    console.warn('Aviso: Falha ao atualizar aluno no Supabase:', err);
+  }
+
   return { success: true, studentEmails: config.studentEmails };
 }
 
 /**
  * Limpa todos os e-mails de estudantes
  */
-export function clearAllStudentEmails() {
+export async function clearAllStudentEmails() {
   const config = getAccessConfig();
   config.studentEmails = [];
   saveAccessConfig(config);
+
+  try {
+    await clearAllStudentsFromDb();
+  } catch (err) {
+    console.warn('Aviso: Falha ao limpar alunos do Supabase:', err);
+  }
+
   return { success: true, studentEmails: [] };
 }
 
 /**
  * Restaura os e-mails padrão da turma
  */
-export function resetDefaultStudentEmails() {
+export async function resetDefaultStudentEmails() {
   const config = getAccessConfig();
   config.studentEmails = [...DEFAULT_STUDENT_EMAILS];
   saveAccessConfig(config);
+
+  try {
+    await syncLocalStudentsToDb(DEFAULT_STUDENT_EMAILS);
+  } catch (err) {
+    console.warn('Aviso: Falha ao restaurar alunos no Supabase:', err);
+  }
+
   return { success: true, studentEmails: config.studentEmails };
 }
 
@@ -240,11 +332,11 @@ export function clearAuthSession() {
 }
 
 /**
- * Realiza a autenticação de login
+ * Realiza a autenticação de login (Sincronizado com Supabase Cloud Database)
  * @param {string} email
  * @param {string} password
  */
-export function authenticateUser(email, password) {
+export async function authenticateUser(email, password) {
   const normEmail = (email || '').trim().toLowerCase();
   const normPass = (password || '').trim();
 
@@ -283,7 +375,22 @@ export function authenticateUser(email, password) {
     };
   }
 
-  const config = getAccessConfig();
+  // Tenta sincronizar com o banco de dados Supabase na nuvem para ter os alunos mais recentes
+  let config = getAccessConfig();
+  try {
+    const dbStudents = await fetchStudentsFromDb();
+    const dbConfig = await fetchAccessConfigFromDb();
+
+    if (dbStudents && Array.isArray(dbStudents) && dbStudents.length > 0) {
+      config.studentEmails = dbStudents.map(s => s.email.toLowerCase()).sort();
+    }
+    if (dbConfig?.studentPassword) {
+      config.studentPassword = dbConfig.studentPassword;
+    }
+    saveAccessConfig(config);
+  } catch (err) {
+    console.warn('Conexão ao banco Supabase offline, utilizando cache local:', err);
+  }
 
   // Verifica se o e-mail está na lista de alunos cadastrados pelo administrador
   const isRegistered = config.studentEmails.some(e => e.trim().toLowerCase() === normEmail);

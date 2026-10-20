@@ -82,8 +82,8 @@ export function AdminPanelModal({
     }
   };
 
-  const handleSaveStudentPassword = () => {
-    const res = updateStudentPassword(studentPasswordInput);
+  const handleSaveStudentPassword = async () => {
+    const res = await updateStudentPassword(studentPasswordInput);
     if (res.success) {
       setFeedbackMsg({ type: 'success', text: `Senha dos alunos atualizada para: "${res.password}"` });
       setAccessConfig(getAccessConfig());
@@ -93,9 +93,9 @@ export function AdminPanelModal({
     }
   };
 
-  const handleResetStudentPassword = () => {
+  const handleResetStudentPassword = async () => {
     if (window.confirm('Restaurar a senha dos alunos para o padrão inicial "123456"?')) {
-      const res = resetStudentPasswordToDefault();
+      const res = await resetStudentPasswordToDefault();
       if (res.success) {
         setFeedbackMsg({ type: 'success', text: 'Senha restaurada para o padrão inicial: 123456' });
         setAccessConfig(getAccessConfig());
@@ -104,13 +104,13 @@ export function AdminPanelModal({
     }
   };
 
-  const handleAddEmails = () => {
+  const handleAddEmails = async () => {
     if (!newEmailsText.trim()) {
       setFeedbackMsg({ type: 'error', text: 'Insira ao menos um e-mail com final @urca.br' });
       return;
     }
 
-    const res = addStudentEmails(newEmailsText);
+    const res = await addStudentEmails(newEmailsText);
     if (res.success) {
       setFeedbackMsg({ 
         type: 'success', 
@@ -124,9 +124,9 @@ export function AdminPanelModal({
     }
   };
 
-  const handleRemoveEmail = (email) => {
+  const handleRemoveEmail = async (email) => {
     if (window.confirm(`Remover o acesso do e-mail ${email}?`)) {
-      const res = removeStudentEmail(email);
+      const res = await removeStudentEmail(email);
       if (res.success) {
         setAccessConfig(getAccessConfig());
       }
