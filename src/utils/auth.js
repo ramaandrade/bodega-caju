@@ -168,12 +168,10 @@ export async function addStudentEmails(inputText) {
   const config = getAccessConfig();
   const currentSet = new Set(config.studentEmails.map(e => e.toLowerCase()));
   let addedCount = 0;
-  const newValidEmails = [];
 
   validEmails.forEach(email => {
     if (!currentSet.has(email)) {
       currentSet.add(email);
-      newValidEmails.push(email);
       addedCount++;
     }
   });
@@ -181,16 +179,21 @@ export async function addStudentEmails(inputText) {
   config.studentEmails = Array.from(currentSet).sort();
   saveAccessConfig(config);
 
-  // Sincroniza com o Supabase
+  // Sincroniza com o Supabase TODOS os emails digitados (garante que sejam gravados no banco na nuvem)
   let dbSynced = false;
+  let dbError = null;
   try {
     const supabaseConfig = getSupabaseConfig();
-    if (supabaseConfig.isConfigured && newValidEmails.length > 0) {
-      const dbRes = await syncLocalStudentsToDb(newValidEmails);
+    if (supabaseConfig.isConfigured) {
+      const dbRes = await syncLocalStudentsToDb(validEmails);
       dbSynced = dbRes.success;
+      if (!dbRes.success) {
+        dbError = dbRes.error;
+      }
     }
   } catch (err) {
-    console.warn('Aviso: Falha ao persistir novos alunos no Supabase:', err);
+    dbError = err.message;
+    console.warn('Aviso: Falha ao persistir alunos no Supabase:', err);
   }
 
   return {
@@ -198,7 +201,8 @@ export async function addStudentEmails(inputText) {
     addedCount,
     totalCount: config.studentEmails.length,
     studentEmails: config.studentEmails,
-    dbSynced
+    dbSynced,
+    dbError
   };
 }
 
@@ -348,22 +352,22 @@ export async function authenticateUser(email, password) {
   }
 
   // 1. Verificação do Administrador
-  if (normEmail === ADMIN_EMAIL.toLowerCase()) {
-    if (normPass === ADMIN_PASSWORD) {
-      const userSession = {
-        email: ADMIN_EMAIL,
-        role: 'admin',
-        name: 'Prof. Rama Lucas (Admin)',
-        loggedAt: new Date().toISOString()
-      };
-      saveAuthSession(userSession);
-      return { success: true, session: userSession };
-    } else {
-      return { 
-        success: false, 
-        error: 'Senha incorreta para a conta de administrador.' 
-      };
-    }
+  // Aceita tanto rama.lucas@urca.br quanto rama@urca.br com a senha do admin (430798@R)
+  const isAdminEmail = normEmail === ADMIN_EMAIL.toLowerCase() || normEmail === 'rama@urca.br';
+  if (isAdminEmail && normPass === ADMIN_PASSWORD) {
+    const userSession = {
+      email: ADMIN_EMAIL,
+      role: 'admin',
+      name: 'Prof. Rama Lucas (Admin)',
+      loggedAt: new Date().toISOString()
+    };
+    saveAuthSession(userSession);
+    return { success: true, session: userSession };
+  } else if (normEmail === ADMIN_EMAIL.toLowerCase() && normPass !== ADMIN_PASSWORD) {
+    return { 
+      success: false, 
+      error: 'Senha incorreta para a conta de administrador.' 
+    };
   }
 
   // 2. Verificação de Aluno
@@ -382,7 +386,12 @@ export async function authenticateUser(email, password) {
     const dbConfig = await fetchAccessConfigFromDb();
 
     if (dbStudents && Array.isArray(dbStudents) && dbStudents.length > 0) {
-      config.studentEmails = dbStudents.map(s => s.email.toLowerCase()).sort();
+      // Mescla os alunos locais com os do banco para nunca perder cadastros
+      const mergedSet = new Set([
+        ...config.studentEmails.map(e => e.toLowerCase()),
+        ...dbStudents.map(s => s.email.toLowerCase())
+      ]);
+      config.studentEmails = Array.from(mergedSet).sort();
     }
     if (dbConfig?.studentPassword) {
       config.studentPassword = dbConfig.studentPassword;

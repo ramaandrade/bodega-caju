@@ -78,10 +78,12 @@ export function getSupabaseConfig() {
     const raw = localStorage.getItem(STORAGE_SUPABASE_CONFIG);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.url && parsed.anonKey) {
+      const url = cleanSupabaseUrl(parsed.url || DEFAULT_SUPABASE_URL);
+      const anonKey = (parsed.anonKey || '').trim();
+      if (url && anonKey) {
         return {
-          url: cleanSupabaseUrl(parsed.url),
-          anonKey: parsed.anonKey.trim(),
+          url,
+          anonKey,
           isConfigured: true,
           source: 'local'
         };
@@ -92,9 +94,9 @@ export function getSupabaseConfig() {
   }
 
   // Fallback para variáveis de ambiente Vite (se configuradas no deploy)
-  const envUrl = import.meta.env.VITE_SUPABASE_URL;
+  const envUrl = import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (envUrl && envKey) {
+  if (envKey) {
     return {
       url: cleanSupabaseUrl(envUrl),
       anonKey: envKey.trim(),
@@ -104,7 +106,7 @@ export function getSupabaseConfig() {
   }
 
   return {
-    url: '',
+    url: DEFAULT_SUPABASE_URL,
     anonKey: '',
     isConfigured: false,
     source: 'none'
@@ -259,15 +261,29 @@ export async function fetchStudentsFromDb() {
   }
 }
 
+export const DEFAULT_SUPABASE_URL = 'https://kviamekcykzggiqwwfho.supabase.co';
+
 /**
  * Insere um novo aluno no banco de dados Supabase
  */
 export async function insertStudentToDb(email, name = '') {
   const client = getSupabaseClient();
-  if (!client) return { success: false, offline: true };
+  if (!client) return { success: false, error: 'Supabase não conectado (Modo Local)' };
 
   const normEmail = (email || '').trim().toLowerCase();
   try {
+    // 1. Verifica se já existe para evitar erro de duplicidade
+    const { data: existing } = await client
+      .from('caju_students')
+      .select('id, email')
+      .eq('email', normEmail)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: true, student: existing, alreadyExisted: true };
+    }
+
+    // 2. Insere novo aluno
     const { data, error } = await client
       .from('caju_students')
       .insert([{ email: normEmail, name: name || normEmail.split('@')[0] }])
@@ -275,7 +291,7 @@ export async function insertStudentToDb(email, name = '') {
 
     if (error) {
       if (error.code === '23505') {
-        return { success: false, error: 'Este e-mail já está cadastrado no banco de dados.' };
+        return { success: true, alreadyExisted: true };
       }
       return { success: false, error: error.message };
     }
@@ -409,25 +425,51 @@ export async function saveAccessConfigToDb(accessConfig) {
 
 /**
  * Sincroniza em lote a lista local de alunos com o banco de dados Supabase
+ * Tenta primeiro upsert em lote e, se falhar (por exemplo, ausência de restrição de unicidade no Postgres),
+ * faz inserções individuais resilientes.
  */
 export async function syncLocalStudentsToDb(emails) {
   const client = getSupabaseClient();
   if (!client) return { success: false, error: 'Supabase não conectado.' };
 
-  const records = emails.map(email => ({
-    email: email.trim().toLowerCase(),
+  const normEmails = (emails || []).map(email => email.trim().toLowerCase()).filter(Boolean);
+  if (normEmails.length === 0) return { success: true, count: 0 };
+
+  const records = normEmails.map(email => ({
+    email,
     name: email.split('@')[0]
   }));
 
+  // Tentativa 1: Upsert em lote
   try {
     const { data, error } = await client
       .from('caju_students')
       .upsert(records, { onConflict: 'email' })
       .select();
 
-    if (error) return { success: false, error: error.message };
-    return { success: true, count: data?.length || records.length };
+    if (!error) {
+      return { success: true, count: data?.length || records.length };
+    }
   } catch (err) {
-    return { success: false, error: err.message };
+    // prossegue para a inserção individual resiliente
   }
+
+  // Tentativa 2: Inserção resiliente um a um
+  let savedCount = 0;
+  const errors = [];
+
+  for (const email of normEmails) {
+    const res = await insertStudentToDb(email);
+    if (res.success) {
+      savedCount++;
+    } else {
+      errors.push(`${email}: ${res.error}`);
+    }
+  }
+
+  if (savedCount === 0 && errors.length > 0) {
+    return { success: false, error: errors[0], errors };
+  }
+
+  return { success: true, count: savedCount };
 }

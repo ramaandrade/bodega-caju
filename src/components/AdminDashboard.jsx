@@ -136,8 +136,12 @@ export function AdminDashboard({
 
     const res = await addStudentEmails(newEmailsText);
     if (res.success) {
-      const dbNote = res.dbSynced ? ' e salvo no banco de dados Supabase na nuvem!' : '!';
-      showToast('success', `${res.addedCount} e-mail(s) cadastrado(s) com sucesso${dbNote} Total: ${res.totalCount}`);
+      if (res.dbError) {
+        showToast('error', `Atenção: Salvo no navegador, mas o Supabase rejeitou: ${res.dbError}`);
+      } else {
+        const dbNote = res.dbSynced ? ' e salvo no banco de dados Supabase na nuvem!' : '!';
+        showToast('success', `${res.addedCount} e-mail(s) cadastrado(s) com sucesso${dbNote} Total: ${res.totalCount}`);
+      }
       setNewEmailsText('');
       refreshConfig();
       confetti({ particleCount: 40, spread: 70 });
@@ -259,8 +263,20 @@ export function AdminDashboard({
     }
     const cfg = getSupabaseConfig();
     setSupabaseConfig(cfg);
-    showToast('success', 'Credenciais do Supabase salvas!');
-    await handleTestDbConnection();
+    showToast('success', 'Credenciais salvas! Testando conexão...');
+    const testResult = await testSupabaseConnection(cleanedUrl, supabaseKeyInput);
+    setDbTestResult(testResult);
+    if (testResult.success) {
+      // Sincroniza imediatamente todos os alunos locais para o Supabase!
+      const syncRes = await syncLocalStudentsToDb(accessConfig.studentEmails);
+      if (syncRes.success) {
+        showToast('success', `Conectado ao Supabase! ${syncRes.count} alunos gravados no banco na nuvem.`);
+      } else {
+        showToast('error', `Aviso ao gravar alunos no Supabase: ${syncRes.error}`);
+      }
+    } else {
+      showToast('error', testResult.error);
+    }
   };
 
   const handleDisconnectSupabase = () => {
