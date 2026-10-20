@@ -111,11 +111,21 @@ export function getSupabaseConfig() {
   };
 }
 
+export function cleanSupabaseUrl(url) {
+  if (!url) return '';
+  let clean = url.trim();
+  // Remove /rest/v1 se o usuário tiver copiado o endpoint completo
+  clean = clean.replace(/\/rest\/v1\/?$/i, '');
+  // Remove barras finais
+  clean = clean.replace(/\/+$/, '');
+  return clean;
+}
+
 /**
  * Salva as credenciais do Supabase no localStorage
  */
 export function saveSupabaseConfig(url, anonKey) {
-  const trimmedUrl = (url || '').trim();
+  const trimmedUrl = cleanSupabaseUrl(url);
   const trimmedKey = (anonKey || '').trim();
 
   if (!trimmedUrl || !trimmedKey) {
@@ -183,7 +193,7 @@ export async function testSupabaseConnection(customUrl = null, customKey = null)
   let client;
   if (customUrl && customKey) {
     try {
-      client = createClient(customUrl.trim(), customKey.trim(), {
+      client = createClient(cleanSupabaseUrl(customUrl), customKey.trim(), {
         auth: { persistSession: false }
       });
     } catch (e) {
