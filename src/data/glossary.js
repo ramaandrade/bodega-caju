@@ -21,6 +21,13 @@ export const GLOSSARY_TERMS = [
     example: 'Custo R$ 10,00, taxa maquininha 4%, imposto 6%, lucro desejado 20%: Preço = 10 / (1 - 0,30) = R$ 14,29.'
   },
   {
+    term: 'Custos de Transação (CT)',
+    category: 'Custos e Precificação',
+    formula: 'CT = Busca (pesquisa de preço) + Negociação (acordos) + Monitoramento (cobrança e entrega)',
+    description: 'Custos invisíveis que o empreendedor gasta não na produção física da mercadoria, mas para fazer a transação comercial acontecer. Inclui o tempo e transporte para pesquisar fornecedores, esforço para negociar condições e o desgaste/risco de cobrar clientes ou fiscalizar entregas. Custos de transação altos corroem o lucro real do negócio.',
+    example: 'Viajar 2 horas de moto para comprar insumo R$ 0,50 mais barato consome combustível e tempo de cozinha valioso: esse Custo de Transação anula a economia. Na caderneta de fiado, o tempo e constrangimento de ir cobrar de porta em porta é outro Custo de Transação puro.'
+  },
+  {
     term: 'Ciclo Operacional (CO)',
     category: 'Capital de Giro',
     formula: 'CO = PME + PMR',

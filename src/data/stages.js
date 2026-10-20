@@ -506,6 +506,12 @@ export const STAGES_DATA = [
         title: 'A Ficha Técnica',
         content: 'A ficha técnica padroniza a receita: pesa cada grama de carne, mede a colher de óleo e o tempo de fogo. Evita desperdício e garante que o custo de ontem seja o mesmo de amanhã.',
         badge: 'Ferramenta'
+      },
+      {
+        type: 'Conceito',
+        title: 'Custos de Transação (CT)',
+        content: 'Gastos invisíveis para viabilizar negócios: tempo pesquisando fornecedores (busca), negociando prazos (negociação) e cobrando devedores ou fiscalizando entregas (monitoramento). O Pix e contratos claros reduzem esses custos!',
+        badge: 'Economia Institucional'
       }
     ],
     oficinaId: 'custos',
