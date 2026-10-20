@@ -54,6 +54,7 @@ import {
   clearSupabaseConfig,
   testSupabaseConnection,
   syncLocalStudentsToDb,
+  cleanSupabaseUrl,
   SUPABASE_SCHEMA_SQL
 } from '../services/supabase';
 
@@ -81,7 +82,7 @@ export function AdminDashboard({
 
   // Supabase Database state
   const [supabaseConfig, setSupabaseConfig] = useState(() => getSupabaseConfig());
-  const [supabaseUrlInput, setSupabaseUrlInput] = useState(() => getSupabaseConfig().url);
+  const [supabaseUrlInput, setSupabaseUrlInput] = useState(() => cleanSupabaseUrl(getSupabaseConfig().url));
   const [supabaseKeyInput, setSupabaseKeyInput] = useState(() => getSupabaseConfig().anonKey);
   const [isTestingDb, setIsTestingDb] = useState(false);
   const [dbTestResult, setDbTestResult] = useState(null);
@@ -236,7 +237,9 @@ export function AdminDashboard({
   const handleTestDbConnection = async () => {
     setIsTestingDb(true);
     setDbTestResult(null);
-    const result = await testSupabaseConnection(supabaseUrlInput, supabaseKeyInput);
+    const cleanedUrl = cleanSupabaseUrl(supabaseUrlInput);
+    setSupabaseUrlInput(cleanedUrl);
+    const result = await testSupabaseConnection(cleanedUrl, supabaseKeyInput);
     setIsTestingDb(false);
     setDbTestResult(result);
     if (result.success) {
@@ -247,7 +250,9 @@ export function AdminDashboard({
   };
 
   const handleSaveSupabase = async () => {
-    const saveRes = saveSupabaseConfig(supabaseUrlInput, supabaseKeyInput);
+    const cleanedUrl = cleanSupabaseUrl(supabaseUrlInput);
+    setSupabaseUrlInput(cleanedUrl);
+    const saveRes = saveSupabaseConfig(cleanedUrl, supabaseKeyInput);
     if (!saveRes.success) {
       showToast('error', saveRes.error);
       return;
@@ -910,6 +915,7 @@ export function AdminDashboard({
                     type="url"
                     value={supabaseUrlInput}
                     onChange={(e) => setSupabaseUrlInput(e.target.value)}
+                    onBlur={() => setSupabaseUrlInput(cleanSupabaseUrl(supabaseUrlInput))}
                     placeholder="https://seu-projeto-ref.supabase.co"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-stone-950 border border-stone-700 text-stone-100 font-mono text-xs placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />

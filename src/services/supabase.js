@@ -80,7 +80,7 @@ export function getSupabaseConfig() {
       const parsed = JSON.parse(raw);
       if (parsed.url && parsed.anonKey) {
         return {
-          url: parsed.url.trim(),
+          url: cleanSupabaseUrl(parsed.url),
           anonKey: parsed.anonKey.trim(),
           isConfigured: true,
           source: 'local'
@@ -96,7 +96,7 @@ export function getSupabaseConfig() {
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (envUrl && envKey) {
     return {
-      url: envUrl.trim(),
+      url: cleanSupabaseUrl(envUrl),
       anonKey: envKey.trim(),
       isConfigured: true,
       source: 'env'
