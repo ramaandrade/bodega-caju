@@ -12,12 +12,16 @@ import {
   TrendingUp,
   Store,
   RotateCcw,
-  KeyRound
+  KeyRound,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 import { getPlayerLevel } from '../utils/storage';
 
 export function Navbar({ 
   gameState, 
+  authSession,
+  onLogout,
   onOpenCalculator, 
   onOpenGlossary, 
   onToggleAudio, 
@@ -131,6 +135,18 @@ export function Navbar({
           >
             {settings.audioSpeech ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
+
+          {/* Sair da Conta (Logout) */}
+          {authSession && (
+            <button 
+              onClick={onLogout}
+              className="p-1.5 rounded-lg bg-stone-800 hover:bg-rose-950/70 text-stone-400 hover:text-rose-400 active:scale-90 transition-transform"
+              title={`Sair da conta (${authSession.email})`}
+              aria-label="Sair da Conta"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -192,6 +208,24 @@ export function Navbar({
             </div>
 
             <div className="py-3 space-y-2 text-xs">
+              {authSession && (
+                <div className="p-2.5 rounded-xl bg-stone-950 border border-stone-800 space-y-1 mb-2">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-stone-400">Usuário Conectado:</span>
+                    <span className="font-mono text-amber-300 font-bold">{authSession.email}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-stone-400">Nível de Acesso:</span>
+                    <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
+                      authSession.role === 'admin' 
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
+                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    }`}>
+                      {authSession.role === 'admin' ? '👑 Administrador / Docente' : '🎓 Aluno (@urca.br)'}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between py-1 border-b border-stone-800/60">
                 <span className="text-stone-400">Negócio Atual:</span>
                 <span className="font-bold text-amber-300">{businessState.name}</span>
@@ -254,6 +288,20 @@ export function Navbar({
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reiniciar Jornada / Trocar de Negócio</span>
             </button>
+
+            {/* Sair da Conta */}
+            {authSession && (
+              <button
+                onClick={() => {
+                  setShowProfileModal(false);
+                  onLogout();
+                }}
+                className="w-full mt-2 py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-stone-700"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sair da Conta (Logout)</span>
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -19,6 +19,8 @@ import { TurmaHub } from './components/PainelProfessor/TurmaHub';
 import { CalculatorModal } from './components/CalculatorModal';
 import { GlossarioModal } from './components/GlossarioModal';
 import { AdminPanelModal } from './components/AdminPanelModal';
+import { LoginScreen } from './components/LoginScreen';
+import { getAuthSession, clearAuthSession } from './utils/auth';
 import { Sparkles, Store, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -30,9 +32,20 @@ export default function App() {
     return createInitialState(PLAYABLE_BUSINESSES[0]);
   });
 
+  const [authSession, setAuthSession] = useState(() => getAuthSession());
+
   const [hasStarted, setHasStarted] = useState(() => {
     return Boolean(loadGameState()?.profile?.registeredAt);
   });
+
+  const handleLoginSuccess = (session) => {
+    setAuthSession(session);
+  };
+
+  const handleLogout = () => {
+    clearAuthSession();
+    setAuthSession(null);
+  };
 
   // Navigation state
   const [activeTab, setActiveTab] = useState('trilha'); // 'trilha' | 'oficinas' | 'empreendedor' | 'revisao' | 'turma'
@@ -219,8 +232,8 @@ export default function App() {
   // Finish Onboarding
   const handleFinishOnboarding = (biz = onboardingBiz) => {
     const initialState = createInitialState(biz, {
-      name: 'Estudante',
-      role: 'aluno',
+      name: authSession?.name || 'Estudante da URCA',
+      role: authSession?.role || 'aluno',
       classCode: 'URCA26'
     });
     setGameState(initialState);
@@ -231,6 +244,11 @@ export default function App() {
   const selectedStage = getStageData(selectedStageId, gameState.businessState);
   const isHighContrast = gameState.settings?.highContrast;
   const isLargeFont = gameState.settings?.fontSize === 'large';
+
+  // ---------------- AUTHENTICATION GATE (LOGIN SCREEN) ----------------
+  if (!authSession) {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
 
   // ---------------- ONBOARDING SCREEN (ESCOLHA DIRETA DO NEGÓCIO) ----------------
   if (!hasStarted) {
@@ -297,6 +315,8 @@ export default function App() {
       {/* Top Header / HUD */}
       <Navbar 
         gameState={gameState}
+        authSession={authSession}
+        onLogout={handleLogout}
         onOpenCalculator={() => setShowCalculator(true)}
         onOpenGlossary={() => setShowGlossary(true)}
         onToggleAudio={handleToggleAudio}
@@ -392,6 +412,7 @@ export default function App() {
         onClose={() => setShowAdminModal(false)}
         gameState={gameState}
         onUpdateAdminStages={handleUpdateAdminStages}
+        currentAuthSession={authSession}
       />
     </div>
   );
