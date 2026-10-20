@@ -34,7 +34,8 @@ import {
   removeStudentEmail,
   updateStudentEmail,
   clearAllStudentEmails,
-  resetDefaultStudentEmails
+  resetDefaultStudentEmails,
+  resetStudentPasswordToDefault
 } from '../utils/auth';
 
 export function AdminDashboard({ 
@@ -78,11 +79,21 @@ export function AdminDashboard({
   const handleSaveStudentPassword = () => {
     const res = updateStudentPassword(studentPasswordInput);
     if (res.success) {
-      showToast('success', 'Senha dos alunos atualizada com sucesso!');
+      showToast('success', `Senha dos alunos atualizada para: "${res.password}"`);
       refreshConfig();
       confetti({ particleCount: 30, spread: 60 });
     } else {
       showToast('error', res.error);
+    }
+  };
+
+  const handleResetStudentPassword = () => {
+    if (window.confirm('Restaurar a senha dos alunos para o padrão inicial "123456"?')) {
+      const res = resetStudentPasswordToDefault();
+      if (res.success) {
+        showToast('success', 'Senha dos alunos restaurada para o padrão inicial: 123456');
+        refreshConfig();
+      }
     }
   };
 
@@ -304,21 +315,39 @@ export function AdminDashboard({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Card 1: Senha Única dos Alunos */}
               <div className="bg-white text-stone-900 rounded-3xl p-5 shadow-xl border border-stone-200 space-y-3">
-                <div className="flex items-start gap-2.5">
-                  <span className="text-xl select-none">🔑</span>
-                  <div>
-                    <h3 className="font-extrabold text-sm text-stone-900 leading-snug">
-                      Senha dos Alunos
-                    </h3>
-                    <p className="text-xs text-stone-500">
-                      Senha única usada por todos os alunos cadastrados para acessar a plataforma
-                    </p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-xl select-none">🔑</span>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-stone-900 leading-snug">
+                        Senha dos Alunos
+                      </h3>
+                      <p className="text-xs text-stone-500">
+                        Senha padrão: <strong className="text-emerald-700 font-mono">123456</strong>. O administrador pode alterá-la quando quiser para toda a turma.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full border border-emerald-300 shrink-0">
+                    Padrão: 123456
+                  </span>
+                </div>
+
+                {/* Exibição da Senha Ativa */}
+                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs">
+                  <span className="text-stone-600 font-semibold">Senha ativa no sistema:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-bold text-stone-900 bg-white px-3 py-1 rounded-xl border border-stone-300 shadow-sm">
+                      {accessConfig.studentPassword || '123456'}
+                    </span>
+                    {accessConfig.studentPassword === '123456' && (
+                      <span className="text-[10px] text-emerald-700 font-semibold">(Padrão)</span>
+                    )}
                   </div>
                 </div>
 
                 <div className="pt-1">
                   <label className="text-xs font-semibold text-stone-700 block mb-1">
-                    Senha atual
+                    Alterar senha dos alunos:
                   </label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -345,9 +374,23 @@ export function AdminDashboard({
                       className="px-4 py-2.5 rounded-xl bg-[#1e6f5c] hover:bg-[#155345] active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
                     >
                       <Save className="w-3.5 h-3.5" />
-                      <span>Salvar</span>
+                      <span>Salvar Senha</span>
                     </button>
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] pt-0.5">
+                  <span className="text-stone-400">Padrão do sistema: 123456</span>
+                  {accessConfig.studentPassword !== '123456' && (
+                    <button
+                      type="button"
+                      onClick={handleResetStudentPassword}
+                      className="text-amber-800 hover:text-amber-950 hover:underline font-semibold flex items-center gap-1"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Voltar para 123456</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -372,16 +415,16 @@ export function AdminDashboard({
                     className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-stone-900 text-xs font-mono leading-relaxed placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1e6f5c] resize-none"
                   />
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] text-stone-400">
                       Aceita listas coladas do SIGA ou planilhas
                     </span>
                     <button
                       type="submit"
-                      className="px-4 py-2 rounded-xl bg-[#1e6f5c] hover:bg-[#155345] active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-[#1e6f5c] hover:bg-[#155345] active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>+ Cadastrar Aluno(s)</span>
+                      <span>Cadastrar Aluno(s)</span>
                     </button>
                   </div>
                 </form>

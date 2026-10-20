@@ -26,7 +26,8 @@ import {
   getAccessConfig, 
   updateStudentPassword, 
   addStudentEmails, 
-  removeStudentEmail 
+  removeStudentEmail,
+  resetStudentPasswordToDefault 
 } from '../utils/auth';
 
 export { ADMIN_PASSWORD };
@@ -84,11 +85,22 @@ export function AdminPanelModal({
   const handleSaveStudentPassword = () => {
     const res = updateStudentPassword(studentPasswordInput);
     if (res.success) {
-      setFeedbackMsg({ type: 'success', text: 'Senha dos alunos atualizada com sucesso!' });
+      setFeedbackMsg({ type: 'success', text: `Senha dos alunos atualizada para: "${res.password}"` });
       setAccessConfig(getAccessConfig());
       setTimeout(() => setFeedbackMsg({ type: '', text: '' }), 3000);
     } else {
       setFeedbackMsg({ type: 'error', text: res.error });
+    }
+  };
+
+  const handleResetStudentPassword = () => {
+    if (window.confirm('Restaurar a senha dos alunos para o padrão inicial "123456"?')) {
+      const res = resetStudentPasswordToDefault();
+      if (res.success) {
+        setFeedbackMsg({ type: 'success', text: 'Senha restaurada para o padrão inicial: 123456' });
+        setAccessConfig(getAccessConfig());
+        setTimeout(() => setFeedbackMsg({ type: '', text: '' }), 3000);
+      }
     }
   };
 
@@ -270,21 +282,33 @@ export function AdminPanelModal({
               <div className="p-4 space-y-4 text-stone-900">
                 {/* Card 1: Senha dos Alunos (Fiel ao screenshot do usuário) */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-stone-200/90 space-y-3">
-                  <div className="flex items-start gap-2">
-                    <span className="text-base select-none">🔑</span>
-                    <div>
-                      <h3 className="font-extrabold text-sm text-stone-900 leading-snug">
-                        Senha dos Alunos
-                      </h3>
-                      <p className="text-[11px] text-stone-500">
-                        Senha única usada por todos os alunos para acessar a plataforma
-                      </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2">
+                      <span className="text-base select-none">🔑</span>
+                      <div>
+                        <h3 className="font-extrabold text-sm text-stone-900 leading-snug">
+                          Senha dos Alunos
+                        </h3>
+                        <p className="text-[11px] text-stone-500">
+                          Senha padrão: <strong className="text-emerald-700 font-mono">123456</strong>. O administrador pode alterá-la quando quiser.
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300 shrink-0">
+                      Padrão: 123456
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-stone-50 border border-stone-200 text-xs">
+                    <span className="text-stone-600 font-semibold">Senha ativa no sistema:</span>
+                    <span className="font-mono font-bold text-stone-900 bg-white px-2.5 py-0.5 rounded-lg border border-stone-300 shadow-sm">
+                      {accessConfig.studentPassword || '123456'}
+                    </span>
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold text-stone-700 block mb-1">
-                      Senha atual
+                      Definir nova senha:
                     </label>
                     <div className="flex items-center gap-2">
                       <input
@@ -296,13 +320,25 @@ export function AdminPanelModal({
                       />
                       <button
                         onClick={handleSaveStudentPassword}
-                        className="px-4 py-2 rounded-xl bg-[#1e6f5c] hover:bg-[#155345] active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-[#1e6f5c] hover:bg-[#155345] active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
                       >
                         <Save className="w-3.5 h-3.5" />
                         <span>Salvar</span>
                       </button>
                     </div>
                   </div>
+
+                  {accessConfig.studentPassword !== '123456' && (
+                    <div className="text-right pt-0.5">
+                      <button
+                        type="button"
+                        onClick={handleResetStudentPassword}
+                        className="text-[11px] text-amber-800 hover:underline font-semibold"
+                      >
+                        ↺ Restaurar padrão (123456)
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card 2: Adicionar E-mails (Fiel ao screenshot do usuário) */}

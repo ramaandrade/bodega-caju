@@ -67,6 +67,16 @@ export function updateStudentPassword(newPassword) {
 }
 
 /**
+ * Restaura a senha dos alunos para o padrão inicial "123456"
+ */
+export function resetStudentPasswordToDefault() {
+  const config = getAccessConfig();
+  config.studentPassword = DEFAULT_STUDENT_PASSWORD;
+  saveAccessConfig(config);
+  return { success: true, password: DEFAULT_STUDENT_PASSWORD };
+}
+
+/**
  * Adiciona novos e-mails de estudantes.
  * Valida rigorosamente que todos os e-mails terminem com @urca.br
  */
@@ -284,8 +294,9 @@ export function authenticateUser(email, password) {
     };
   }
 
-  // Verifica a senha única dos alunos
-  if (normPass !== config.studentPassword) {
+  // Verifica a senha única dos alunos (padrão 123456 ou personalizada pelo admin)
+  const expectedPassword = config.studentPassword || DEFAULT_STUDENT_PASSWORD;
+  if (normPass !== expectedPassword) {
     return { 
       success: false, 
       error: 'Senha incorreta para alunos. Verifique a senha da turma com o professor.' 
