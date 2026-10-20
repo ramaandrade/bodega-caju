@@ -465,7 +465,7 @@ function OficinaCalendario({ businessState, onUpdateCash, onRewardCajus }) {
             }`}
           >
             <div className="text-[10px] uppercase font-bold text-stone-600">{m.name}</div>
-            <div className="text-[9px] text-amber-800 truncate">{m.season}</div>
+            <div className="text-[9px] text-amber-800 leading-tight font-medium" title={m.season}>{m.season}</div>
             <div className={`font-mono text-[10px] font-bold mt-1 ${m.netCash >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
               R$ {Math.round(m.netCash)}
             </div>

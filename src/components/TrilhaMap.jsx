@@ -9,6 +9,7 @@ import {
   Award, 
   Calendar, 
   ChevronRight, 
+  ChevronLeft,
   MapPin, 
   TrendingUp, 
   Info,
@@ -82,26 +83,117 @@ export function TrilhaMap({ gameState, onSelectStage, onOpenAdminPanel }) {
       </div>
 
       {/* Sazonalidade do Cariri Interactive Banner */}
-      <div className="bg-amber-100/90 border border-amber-300 rounded-2xl p-3 shadow-sm text-stone-800">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
-            <Calendar className="w-4 h-4 text-amber-700" />
-            <span>Calendário Sazonal do Cariri: {activeSeason.month}</span>
+      <div className="bg-amber-100/95 border border-amber-300 rounded-2xl p-3.5 shadow-sm text-stone-800 transition-all">
+        {/* Top bar with title, month and pagination */}
+        <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-amber-200/80">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Calendar className="w-4 h-4 text-amber-700 shrink-0" />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-amber-950">Calendário Sazonal do Cariri</span>
+              <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full border border-amber-400/50 font-bold whitespace-nowrap">
+                📅 {activeSeason.month}
+              </span>
+            </div>
           </div>
-          <button 
-            onClick={() => setSelectedSeasonIdx((prev) => (prev + 1) % SEASONAL_EVENTS.length)}
-            className="text-[10px] font-bold text-amber-800 underline active:opacity-70"
-          >
-            Próximo Evento ↻
-          </button>
+          
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="text-[10px] text-amber-900/80 font-bold mr-0.5">
+              {selectedSeasonIdx + 1}/{SEASONAL_EVENTS.length}
+            </span>
+            <button
+              onClick={() => setSelectedSeasonIdx((prev) => (prev - 1 + SEASONAL_EVENTS.length) % SEASONAL_EVENTS.length)}
+              className="p-1 rounded-lg bg-amber-200/90 hover:bg-amber-300 active:scale-95 text-amber-950 font-bold transition-all"
+              title="Evento anterior"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button 
+              onClick={() => setSelectedSeasonIdx((prev) => (prev + 1) % SEASONAL_EVENTS.length)}
+              className="p-1 rounded-lg bg-amber-200/90 hover:bg-amber-300 active:scale-95 text-amber-950 font-bold transition-all"
+              title="Próximo evento"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{activeSeason.icon}</span>
-          <div className="flex-1">
-            <h4 className="text-xs font-bold text-stone-900">{activeSeason.name} ({activeSeason.city})</h4>
-            <p className="text-[11px] text-stone-600 line-clamp-1">{activeSeason.effectDescription}</p>
+        {/* Content Box */}
+        <div className="bg-amber-50/90 rounded-xl p-3 border border-amber-200/80 space-y-2">
+          {/* Header of the event */}
+          <div className="flex items-start gap-2.5">
+            <span className="text-2xl sm:text-3xl shrink-0 select-none">{activeSeason.icon}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 leading-snug">
+                  {activeSeason.name}
+                </h4>
+                <span className="text-[10px] font-semibold bg-amber-200/80 text-amber-900 px-1.5 py-0.5 rounded-md">
+                  📍 {activeSeason.city}
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* Full description without clipping */}
+          <div className="text-xs text-stone-800 leading-relaxed font-medium">
+            <span className="font-bold text-amber-950">Efeito no Negócio: </span>
+            {activeSeason.effectDescription}
+          </div>
+
+          {/* Cultural Story / Causo contextual */}
+          {activeSeason.story && (
+            <div className="text-[11px] text-amber-900 italic bg-amber-100/70 p-2 rounded-lg border-l-2 border-amber-500 leading-relaxed">
+              "{activeSeason.story}"
+            </div>
+          )}
+
+          {/* Badges footer */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px]">
+            {activeSeason.demandMultiplier && activeSeason.demandMultiplier !== 1.0 && (
+              <span className={`px-2 py-0.5 rounded-md font-bold ${
+                activeSeason.demandMultiplier > 1 
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                  : 'bg-rose-100 text-rose-800 border border-rose-300'
+              }`}>
+                {activeSeason.demandMultiplier > 1 ? '📈 Demanda: +' : '📉 Demanda: '}
+                {Math.round((activeSeason.demandMultiplier - 1) * 100)}%
+              </span>
+            )}
+            {activeSeason.workingCapitalImpact && (
+              <span className={`px-2 py-0.5 rounded-md font-semibold ${
+                activeSeason.workingCapitalImpact === 'critical' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                activeSeason.workingCapitalImpact === 'high' ? 'bg-amber-200 text-amber-900 border border-amber-300' :
+                'bg-stone-200 text-stone-800'
+              }`}>
+                Capital de Giro: {
+                  activeSeason.workingCapitalImpact === 'critical' ? 'Crítico ⚠️' :
+                  activeSeason.workingCapitalImpact === 'high' ? 'Alto ⚡' :
+                  activeSeason.workingCapitalImpact === 'medium' ? 'Médio' : 'Baixo'
+                }
+              </span>
+            )}
+            {activeSeason.contentReinforced && (
+              <span className="text-stone-600 font-medium">
+                💡 {activeSeason.contentReinforced}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Indicator dots for quick navigation */}
+        <div className="flex items-center justify-center gap-1.5 mt-2">
+          {SEASONAL_EVENTS.map((ev, idx) => (
+            <button
+              key={ev.id}
+              onClick={() => setSelectedSeasonIdx(idx)}
+              className={`h-1.5 rounded-full transition-all ${
+                idx === selectedSeasonIdx 
+                  ? 'w-5 bg-amber-700' 
+                  : 'w-1.5 bg-amber-300 hover:bg-amber-400'
+              }`}
+              title={ev.name}
+            />
+          ))}
         </div>
       </div>
 
@@ -182,16 +274,16 @@ export function TrilhaMap({ gameState, onSelectStage, onOpenAdminPanel }) {
                       </span>
                     )}
                   </div>
-                  <h3 className="text-sm font-bold text-stone-900 truncate">
+                  <h3 className="text-sm font-bold text-stone-900 leading-snug">
                     {stage.title}
                   </h3>
-                  <p className="text-[11px] text-stone-500 truncate">
+                  <p className="text-[11px] text-stone-500 leading-tight mt-0.5">
                     {stage.stationName}
                   </p>
                 </div>
 
                 {/* Badges Earned */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   {badge.bronze && <span title="Selo Bronze Conquistado">🥉</span>}
                   {badge.prata && <span title="Selo Prata: Desafio Superado">🥈</span>}
                   {badge.ouro && <span title="Selo Ouro: Missão de Campo Validada">🥇</span>}
@@ -205,8 +297,8 @@ export function TrilhaMap({ gameState, onSelectStage, onOpenAdminPanel }) {
               </div>
 
               {/* Learning preview pill */}
-              <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between text-[11px]">
-                <span className="text-stone-500 italic truncate max-w-[220px]">
+              <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between text-[11px] gap-2">
+                <span className="text-stone-500 italic flex-1">
                   Oficina: {stage.selo.name}
                 </span>
                 <span className={`font-semibold ${
