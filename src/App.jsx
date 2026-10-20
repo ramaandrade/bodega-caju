@@ -22,7 +22,7 @@ import { AdminPanelModal } from './components/AdminPanelModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { LoginScreen } from './components/LoginScreen';
 import { getAuthSession, clearAuthSession } from './utils/auth';
-import { Sparkles, Store, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Sparkles, Store, CheckCircle, ArrowRight, ShieldCheck, LogOut } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function App() {
@@ -272,6 +272,24 @@ export default function App() {
     return (
       <div className="min-h-screen bg-stone-950 text-stone-100 flex items-center justify-center p-3">
         <div className="max-w-md w-full bg-stone-900 border border-amber-600/40 rounded-3xl p-5 shadow-2xl space-y-4">
+          {/* Barra Superior de Usuário com Botão Sair */}
+          <div className="flex items-center justify-between pb-2.5 border-b border-stone-800 text-xs">
+            <div className="flex items-center gap-1.5 text-stone-400 min-w-0">
+              <span className="shrink-0">{authSession?.role === 'admin' ? '👑' : '🎓'}</span>
+              <span className="font-mono text-stone-300 font-semibold truncate max-w-[200px]" title={authSession?.email}>
+                {authSession?.email}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-rose-400 hover:text-rose-300 px-3 py-1 rounded-xl bg-rose-950/50 hover:bg-rose-900/70 border border-rose-800/60 transition-all active:scale-95 cursor-pointer shrink-0"
+              title="Encerrar sessão e voltar à tela de login"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sair</span>
+            </button>
+          </div>
+
           <div className="text-center space-y-1">
             <div className="inline-block p-3 rounded-full bg-gradient-to-tr from-amber-600 to-orange-500 text-3xl shadow-lg animate-float">
               🌰
@@ -311,13 +329,24 @@ export default function App() {
             ))}
           </div>
 
-          <button
-            onClick={() => handleFinishOnboarding(onboardingBiz)}
-            className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all"
-          >
-            <span>Iniciar com {onboardingBiz.name}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="space-y-2 pt-1">
+            <button
+              onClick={() => handleFinishOnboarding(onboardingBiz)}
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+            >
+              <span>Iniciar com {onboardingBiz.name}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            {/* Botão Sair da Conta */}
+            <button
+              onClick={handleLogout}
+              className="w-full py-2.5 rounded-2xl bg-stone-800/70 hover:bg-stone-800 border border-stone-700/80 text-stone-400 hover:text-stone-200 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span>Sair da Conta (Logout)</span>
+            </button>
+          </div>
         </div>
       </div>
     );
