@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { Search, X, BookOpen, Layers, Filter, RotateCcw } from 'lucide-react';
 import { GLOSSARY_TERMS } from '../data/glossary';
 
+function normalizeSearch(text) {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, ''); // remove acentos (ã->a, ç->c, etc)
+}
+
 export function GlossarioModal({ onClose }) {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
@@ -10,9 +18,27 @@ export function GlossarioModal({ onClose }) {
 
   const filteredTerms = GLOSSARY_TERMS.filter(item => {
     const matchesCategory = selectedCategory === 'Todas' || item.category === selectedCategory;
-    const matchesSearch = item.term.toLowerCase().includes(search.toLowerCase()) ||
-                          item.description.toLowerCase().includes(search.toLowerCase()) ||
-                          item.formula.toLowerCase().includes(search.toLowerCase());
+    
+    if (!search.trim()) return matchesCategory;
+
+    // Busca inteligente com remoção de acentos e divisão por palavras
+    const searchWords = normalizeSearch(search)
+      .split(/\s+/)
+      .filter(Boolean)
+      .filter(w => !['de', 'da', 'do', 'das', 'dos', 'em', 'e', 'para', 'com'].includes(w));
+
+    if (searchWords.length === 0) return matchesCategory;
+
+    const fullItemText = normalizeSearch(
+      `${item.term} ${item.category} ${item.formula} ${item.description} ${item.example || ''}`
+    );
+
+    const matchesSearch = searchWords.every(word => {
+      // Tolera plural/singular removendo o 's' final se a palavra for maior que 3 letras
+      const stem = word.endsWith('s') && word.length > 3 ? word.slice(0, -1) : word;
+      return fullItemText.includes(word) || fullItemText.includes(stem);
+    });
+
     return matchesCategory && matchesSearch;
   });
 
