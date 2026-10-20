@@ -5,6 +5,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 export const STORAGE_SUPABASE_CONFIG = 'bodega_caju_supabase_config_v1';
+export const DEFAULT_SUPABASE_URL = 'https://kviamekcykzggiqwwfho.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2aWFtZWtjeWt6Z2dpcXd3ZmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1MjA5MzcsImV4cCI6MjEwODA5NjkzN30.TmjcgSq-poFhtx24N4mpDFd6hXj_hImxwcCOyfVpkLY';
 
 // SQL para criação rápida das tabelas no SQL Editor do Supabase
 export const SUPABASE_SCHEMA_SQL = `-- =====================================================================
@@ -79,7 +81,7 @@ export function getSupabaseConfig() {
     if (raw) {
       const parsed = JSON.parse(raw);
       const url = cleanSupabaseUrl(parsed.url || DEFAULT_SUPABASE_URL);
-      const anonKey = (parsed.anonKey || '').trim();
+      const anonKey = (parsed.anonKey || DEFAULT_SUPABASE_ANON_KEY).trim();
       if (url && anonKey) {
         return {
           url,
@@ -93,15 +95,15 @@ export function getSupabaseConfig() {
     console.error('Erro ao ler config do Supabase do localStorage:', err);
   }
 
-  // Fallback para variáveis de ambiente Vite (se configuradas no deploy)
-  const envUrl = import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (envKey) {
+  // Fallback padrão integrado (ativo automaticamente em todos os celulares e computadores)
+  const envUrl = cleanSupabaseUrl(import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL);
+  const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY).trim();
+  if (envUrl && envKey) {
     return {
-      url: cleanSupabaseUrl(envUrl),
-      anonKey: envKey.trim(),
+      url: envUrl,
+      anonKey: envKey,
       isConfigured: true,
-      source: 'env'
+      source: 'embedded'
     };
   }
 
@@ -260,8 +262,6 @@ export async function fetchStudentsFromDb() {
     return null;
   }
 }
-
-export const DEFAULT_SUPABASE_URL = 'https://kviamekcykzggiqwwfho.supabase.co';
 
 /**
  * Insere um novo aluno no banco de dados Supabase
