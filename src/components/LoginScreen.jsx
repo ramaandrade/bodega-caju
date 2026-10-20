@@ -12,10 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { 
-  authenticateUser, 
-  ADMIN_EMAIL, 
-  ADMIN_PASSWORD,
-  DEFAULT_STUDENT_PASSWORD
+  authenticateUser 
 } from '../utils/auth';
 import confetti from 'canvas-confetti';
 
@@ -42,18 +39,6 @@ export function LoginScreen({ onLoginSuccess }) {
         setErrorMessage(res.error);
       }
     }, 200);
-  };
-
-  const fillAdmin = () => {
-    setEmail(ADMIN_EMAIL);
-    setPassword(ADMIN_PASSWORD);
-    setErrorMessage('');
-  };
-
-  const fillStudent = () => {
-    setEmail('aluno1@urca.br');
-    setPassword(DEFAULT_STUDENT_PASSWORD);
-    setErrorMessage('');
   };
 
   return (
@@ -157,44 +142,6 @@ export function LoginScreen({ onLoginSuccess }) {
               <span>{isLoading ? 'Entrando...' : 'Entrar'}</span>
             </button>
           </form>
-
-          {/* Dica e Atalhos Rápidos para Teste */}
-          <div className="mt-6 pt-4 border-t border-stone-100">
-            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block text-center mb-2">
-              Atalhos de Acesso Rápido (Demonstração):
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={fillAdmin}
-                className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100/80 border border-amber-300/70 text-amber-950 font-semibold text-[11px] flex flex-col items-center justify-center gap-0.5 text-center transition-all active:scale-95"
-              >
-                <span className="font-bold text-amber-900 flex items-center gap-1">
-                  👑 Administrador
-                </span>
-                <span className="text-[10px] text-stone-500 font-mono truncate max-w-full">
-                  rama.lucas@urca.br
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={fillStudent}
-                className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-300/70 text-emerald-950 font-semibold text-[11px] flex flex-col items-center justify-center gap-0.5 text-center transition-all active:scale-95"
-              >
-                <span className="font-bold text-emerald-900 flex items-center gap-1">
-                  🎓 Aluno da Turma
-                </span>
-                <span className="text-[10px] text-stone-500 font-mono truncate max-w-full">
-                  aluno1@urca.br
-                </span>
-              </button>
-            </div>
-
-            <div className="mt-3 text-[10px] text-center text-stone-400">
-              Todos os alunos devem possuir e-mail institucional com final <strong>@urca.br</strong>
-            </div>
-          </div>
         </div>
 
         {/* Rodapé institucional */}
