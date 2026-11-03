@@ -14,7 +14,8 @@ import {
   RotateCcw,
   KeyRound,
   LogOut,
-  UserCheck
+  UserCheck,
+  RefreshCw
 } from 'lucide-react';
 import { getPlayerLevel } from '../utils/storage';
 
@@ -287,6 +288,29 @@ export function Navbar({
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reiniciar Jornada / Trocar de Negócio</span>
+            </button>
+
+            {/* Botão Anti-Cache / Forçar Atualização no Celular */}
+            <button
+              onClick={async () => {
+                try {
+                  if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const reg of registrations) await reg.unregister();
+                  }
+                  if ('caches' in window) {
+                    const keys = await caches.keys();
+                    for (const k of keys) await caches.delete(k);
+                  }
+                } catch (e) {}
+                const cleanUrl = window.location.origin + window.location.pathname.replace(/\/+$/, '') + '/?t=' + Date.now();
+                window.location.href = cleanUrl;
+              }}
+              className="w-full mt-2 py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-stone-700 cursor-pointer"
+              title="Limpa caches persistentes do celular e força o carregamento da versão mais recente"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-stone-400" />
+              <span>Recarregar Versão Mais Recente</span>
             </button>
 
             {/* Sair da Conta */}

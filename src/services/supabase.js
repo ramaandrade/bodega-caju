@@ -424,6 +424,54 @@ export async function saveAccessConfigToDb(accessConfig) {
 }
 
 /**
+ * Busca a configuração das estações liberadas no banco de dados Supabase
+ */
+export async function fetchStagesConfigFromDb() {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data, error } = await client
+      .from('caju_config')
+      .select('value')
+      .eq('key', 'stages_config')
+      .single();
+
+    if (error) return null;
+    return data?.value || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * Salva a configuração das estações liberadas no banco de dados Supabase
+ */
+export async function saveStagesConfigToDb(stagesConfig) {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, offline: true };
+
+  try {
+    const { error } = await client
+      .from('caju_config')
+      .upsert({
+        key: 'stages_config',
+        value: {
+          allUnlocked: Boolean(stagesConfig.allUnlocked),
+          unlockedStages: Array.isArray(stagesConfig.unlockedStages) ? stagesConfig.unlockedStages : [1],
+          updatedAt: new Date().toISOString()
+        },
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Sincroniza em lote a lista local de alunos com o banco de dados Supabase
  * Tenta primeiro upsert em lote e, se falhar (por exemplo, ausência de restrição de unicidade no Postgres),
  * faz inserções individuais resilientes.

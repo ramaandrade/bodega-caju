@@ -21,7 +21,8 @@ import { GlossarioModal } from './components/GlossarioModal';
 import { AdminPanelModal } from './components/AdminPanelModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { LoginScreen } from './components/LoginScreen';
-import { getAuthSession, clearAuthSession } from './utils/auth';
+import { getAuthSession, clearAuthSession, syncFromCloudDb } from './utils/auth';
+import { fetchStagesConfigFromDb, saveStagesConfigToDb } from './services/supabase';
 import { Sparkles, Store, CheckCircle, ArrowRight, ShieldCheck, LogOut } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -69,6 +70,65 @@ export default function App() {
       saveGameState(gameState);
     }
   }, [gameState, hasStarted]);
+
+  // Sincronização automática com o Supabase (Alunos, Senha e Trilhas Liberadas)
+  useEffect(() => {
+    let active = true;
+
+    const syncCloudData = async () => {
+      try {
+        // 1. Sincroniza Alunos e Senha da Turma
+        await syncFromCloudDb();
+
+        // 2. Sincroniza Trilhas Liberadas pelo Professor
+        const cloudStages = await fetchStagesConfigFromDb();
+        if (cloudStages && active) {
+          setGameState(prev => {
+            const currentAdmin = prev.admin || {};
+            const allUnlocked = Boolean(cloudStages.allUnlocked);
+            const unlockedStages = Array.isArray(cloudStages.unlockedStages) 
+              ? cloudStages.unlockedStages 
+              : (currentAdmin.unlockedStages || [1]);
+
+            if (
+              currentAdmin.allUnlocked !== allUnlocked ||
+              JSON.stringify(currentAdmin.unlockedStages) !== JSON.stringify(unlockedStages)
+            ) {
+              return {
+                ...prev,
+                admin: {
+                  ...currentAdmin,
+                  allUnlocked,
+                  unlockedStages
+                }
+              };
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        console.warn('Sincronização em segundo plano:', err);
+      }
+    };
+
+    syncCloudData();
+
+    // Sincroniza quando o aluno ou professor reabre a aba no celular
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncCloudData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', syncCloudData);
+
+    return () => {
+      active = false;
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', syncCloudData);
+    };
+  }, []);
 
   // Audio Speech toggle
   const handleToggleAudio = () => {
@@ -222,8 +282,8 @@ export default function App() {
     setOnboardingBiz(PLAYABLE_BUSINESSES[0]);
   };
 
-  // Admin Update Stages Handler (Disponibilizar estações com a senha)
-  const handleUpdateAdminStages = (adminConfig) => {
+  // Admin Update Stages Handler (Disponibilizar estações com a senha e salvar no Supabase)
+  const handleUpdateAdminStages = async (adminConfig) => {
     setGameState(prev => ({
       ...prev,
       admin: {
@@ -231,6 +291,12 @@ export default function App() {
         ...adminConfig
       }
     }));
+
+    try {
+      await saveStagesConfigToDb(adminConfig);
+    } catch (err) {
+      console.warn('Erro ao salvar liberação de estações no Supabase:', err);
+    }
   };
 
   // Finish Onboarding

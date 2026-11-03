@@ -9,7 +9,8 @@ import {
   Sparkles, 
   GraduationCap,
   KeyRound,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { 
   authenticateUser 
@@ -22,6 +23,29 @@ export function LoginScreen({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleClearCacheAndReload = async () => {
+    setIsRefreshing(true);
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        for (const k of keys) {
+          await caches.delete(k);
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao limpar cache:', e);
+    }
+    const cleanUrl = window.location.origin + window.location.pathname.replace(/\/+$/, '') + '/?t=' + Date.now();
+    window.location.href = cleanUrl;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -145,6 +169,20 @@ export function LoginScreen({ onLoginSuccess }) {
               <span>{isLoading ? 'Entrando...' : 'Entrar'}</span>
             </button>
           </form>
+
+          {/* Botão Anti-Cache para Celulares */}
+          <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={handleClearCacheAndReload}
+              disabled={isRefreshing}
+              className="text-[11px] text-stone-500 hover:text-[#1e6f5c] flex items-center gap-1.5 py-1 px-3 rounded-lg hover:bg-stone-50 transition-colors cursor-pointer"
+              title="Limpa caches antigos do celular e recarrega a versão mais recente"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-stone-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing ? 'Atualizando...' : 'Celular desatualizado? Clique para recarregar'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Rodapé institucional */}
